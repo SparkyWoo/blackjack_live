@@ -19,19 +19,23 @@
 ### 🎮 Gameplay
 - **6-Player Multiplayer** - Real-time synchronized gameplay
 - **Full Blackjack Rules** - Hit, Stand, Double Down, Split, Surrender, Insurance
+- **Keyboard Shortcuts** - H/S/D/P/R keys for quick actions
 - **Auto-Bet Persistence** - Your last bet carries over between rounds
 - **Spectator Mode** - Watch games in progress
 
 ### 🎨 Premium UI/UX
 - **Casino-Grade Visuals** - Emerald felt, wooden rails, gold accents
-- **Smooth Animations** - Card dealing, chip stacking, payout effects
-- **Sound Effects** - Immersive audio for all game actions
+- **Smooth Animations** - Card dealing, chip stacking, payout celebrations
+- **Sound Effects** - Immersive audio with mute toggle
+- **Payout Animations** - Celebratory overlays for wins and blackjacks
 - **Mobile Responsive** - Play on any device
+- **Accessible** - ARIA labels for screen readers
 
 ### ⚡ Technical
 - **Edge-Deployed** - Sub-50ms latency via PartyKit's global edge network
 - **Persistent Balances** - Chip balances survive server restarts
 - **Reconnection Handling** - Seamless recovery from network interruptions
+- **Optimized Bundle** - LazyMotion for reduced JS bundle size
 - **TypeScript** - Full type safety throughout
 
 ## 🚀 Quick Start
@@ -156,6 +160,20 @@ Edit the chip array in `src/components/Table.tsx`:
 {([10, 50, 100, 500, 1000] as ChipValue[]).map((value) => ...)}
 ```
 
+## ⌨️ Keyboard Shortcuts
+
+During your turn, use these keys for quick actions:
+
+| Key | Action |
+|-----|--------|
+| `H` | Hit |
+| `S` | Stand |
+| `D` | Double Down |
+| `P` | Split |
+| `R` | Surrender |
+
+Toggle keyboard hints visibility with the ⌨️ button in the header.
+
 ## 📁 Project Structure
 
 ```
@@ -199,13 +217,25 @@ blackjack_live/
 
 ## 🤝 Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+Contributions are welcome! This is an open source project - fork it, improve it, make it yours.
+
+### Running Your Own Instance
+
+1. Fork the repository
+2. Deploy your own PartyKit server (`npx partykit deploy`)
+3. Deploy your frontend to Vercel (or similar)
+4. Your instance is completely independent
+
+### Submitting Improvements
 
 1. Fork the repository
 2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+3. Test on your own deployment
+4. Commit your changes (`git commit -m 'Add amazing feature'`)
+5. Push to the branch (`git push origin feature/amazing-feature`)
+6. Open a Pull Request
+
+> **Note:** Pull requests are reviewed before merging. Contributors should test on their own fork/deployment.
 
 ## 📄 License
 
