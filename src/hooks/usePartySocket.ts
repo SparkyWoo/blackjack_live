@@ -51,10 +51,6 @@ export function usePartySocket(room: string = "main") {
 
                 switch (msg.type) {
                     case "state_update":
-                        // Play shuffle sound when transitioning to dealing
-                        if (prevPhaseRef.current !== "dealing" && msg.state.phase === "dealing") {
-                            sounds?.play("shuffle");
-                        }
                         prevPhaseRef.current = msg.state.phase;
                         setGameState(msg.state);
                         break;
