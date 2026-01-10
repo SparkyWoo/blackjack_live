@@ -17,6 +17,7 @@ interface TableProps {
     onStand: () => void;
     onDouble: () => void;
     onSplit: () => void;
+    onSurrender: () => void;
     onInsurance: (accept: boolean) => void;
     onLeaveSeat: () => void;
 }
@@ -45,6 +46,7 @@ export function Table({
     onStand,
     onDouble,
     onSplit,
+    onSurrender,
     onInsurance,
     onLeaveSeat,
 }: TableProps) {
@@ -66,6 +68,7 @@ export function Table({
     const activeHand = currentSeat?.hands[gameState.activeHandIndex];
     const canDoubleDown = activeHand && canDouble(activeHand) && displayedChips >= activeHand.bet;
     const canSplitHand = activeHand && canSplit(activeHand) && displayedChips >= activeHand.bet && (currentSeat?.hands.length ?? 0) < 4;
+    const canSurrenderHand = activeHand && activeHand.cards.length === 2 && !activeHand.isSplit;
 
     // Phase descriptions
     const phaseText = {
@@ -384,6 +387,18 @@ export function Table({
                                                            text-white font-bold rounded-xl shadow-lg shadow-blue-500/30 transition-all"
                                             >
                                                 SPLIT
+                                            </motion.button>
+                                        )}
+
+                                        {canSurrenderHand && (
+                                            <motion.button
+                                                whileHover={{ scale: 1.05, y: -2 }}
+                                                whileTap={{ scale: 0.95 }}
+                                                onClick={onSurrender}
+                                                className="px-6 py-3 bg-gradient-to-b from-gray-500 to-gray-700 hover:from-gray-400 hover:to-gray-600
+                                                           text-white font-bold rounded-xl shadow-lg shadow-gray-500/30 transition-all text-sm"
+                                            >
+                                                SURRENDER
                                             </motion.button>
                                         )}
                                     </div>

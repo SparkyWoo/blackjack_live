@@ -126,6 +126,10 @@ export function usePartySocket(room: string = "main") {
         send({ type: "insurance", accept });
     }, [send]);
 
+    const surrender = useCallback(() => {
+        send({ type: "surrender" });
+    }, [send]);
+
     return {
         gameState,
         connected,
@@ -142,6 +146,7 @@ export function usePartySocket(room: string = "main") {
         double,
         split,
         insurance,
+        surrender,
         connectionId: socketRef.current?.id || null,
     };
 }

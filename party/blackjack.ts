@@ -118,6 +118,10 @@ export default class BlackjackServer implements Party.Server {
                 this.handleInsurance(msg.accept, sender);
                 break;
 
+            case "surrender":
+                this.handleSurrender(sender);
+                break;
+
             default:
                 this.sendToConnection(sender, { type: "error", message: "Unknown message type" });
         }
@@ -296,6 +300,30 @@ export default class BlackjackServer implements Party.Server {
         if (!hand || hand.status !== "playing") return;
 
         hand.status = "standing";
+        this.nextPlayerOrHand();
+        this.broadcastState();
+    }
+
+    handleSurrender(sender: Party.Connection) {
+        if (this.state.phase !== "player_turn") return;
+
+        const seatIndex = this.state.seats.findIndex((s) => s.playerId === sender.id);
+        if (seatIndex === -1 || seatIndex !== this.state.activePlayerIndex) return;
+
+        const seat = this.state.seats[seatIndex];
+        const hand = seat.hands[this.state.activeHandIndex];
+        if (!hand || hand.status !== "playing") return;
+
+        // Can only surrender on first two cards, not on split hands
+        if (hand.cards.length !== 2 || hand.isSplit) {
+            this.sendToConnection(sender, { type: "error", message: "Cannot surrender now" });
+            return;
+        }
+
+        // Return half the bet
+        seat.chips += Math.floor(hand.bet / 2);
+        hand.status = "surrendered";
+
         this.nextPlayerOrHand();
         this.broadcastState();
     }
@@ -808,6 +836,12 @@ export default class BlackjackServer implements Party.Server {
             for (const hand of seat.hands) {
                 if (hand.status === "busted") {
                     // Player already lost
+                    this.broadcast({ type: "payout", seatIndex, amount: 0, result: "lose" });
+                    continue;
+                }
+
+                if (hand.status === "surrendered") {
+                    // Player surrendered - already got half bet back, no further payout
                     this.broadcast({ type: "payout", seatIndex, amount: 0, result: "lose" });
                     continue;
                 }

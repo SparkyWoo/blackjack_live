@@ -11,7 +11,7 @@ export interface Card {
 export interface Hand {
     cards: Card[];
     bet: number;
-    status: 'playing' | 'standing' | 'busted' | 'blackjack' | 'doubled';
+    status: 'playing' | 'standing' | 'busted' | 'blackjack' | 'doubled' | 'surrendered';
     isDoubled: boolean;
     isSplit: boolean;
 }
@@ -56,6 +56,7 @@ export type ClientMessage =
     | { type: 'stand' }
     | { type: 'double' }
     | { type: 'split' }
+    | { type: 'surrender' }
     | { type: 'insurance'; accept: boolean }  // Accept or decline insurance
     | { type: 'request_state' };
 
