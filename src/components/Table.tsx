@@ -415,7 +415,11 @@ export function Table({
                                                         ${currentSeat.bet.toLocaleString()}
                                                     </span>
                                                     <button
-                                                        onClick={onClearBet}
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            onClearBet();
+                                                        }}
+                                                        aria-label="Clear current bet"
                                                         className="ml-2 text-red-400 hover:text-red-300 text-xs font-medium
                                                                hover:bg-red-500/20 px-2 py-1 rounded transition-all"
                                                     >

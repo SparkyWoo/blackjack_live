@@ -80,6 +80,8 @@ export function usePartySocket(room: string = "main") {
                             amount: msg.amount,
                             result: msg.result,
                         });
+                        // Auto-dismiss payout notification after 2 seconds
+                        setTimeout(() => setLastPayout(null), 2000);
                         // Play win or lose sound
                         if (msg.result === "win" || msg.result === "blackjack") {
                             sounds?.play("win");
