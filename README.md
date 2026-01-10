@@ -1,7 +1,8 @@
 # 🃏 Blackjack Live
 
-A real-time multiplayer blackjack game with stunning casino aesthetics. Play with up to 6 players, powered by edge-deployed WebSocket infrastructure.
+> **An open-source, real-time multiplayer blackjack game** with stunning casino aesthetics. Play with up to 6 players, powered by edge-deployed WebSocket infrastructure.
 
+[![Open Source](https://img.shields.io/badge/Open%20Source-❤️-red)](https://github.com/SparkyWoo/blackjack_live)
 ![Next.js](https://img.shields.io/badge/Next.js-16.1-black?logo=next.js)
 ![PartyKit](https://img.shields.io/badge/PartyKit-Realtime-ff6b6b?logo=websocket)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue?logo=typescript)
@@ -10,6 +11,8 @@ A real-time multiplayer blackjack game with stunning casino aesthetics. Play wit
 <p align="center">
   <img src="https://raw.githubusercontent.com/SparkyWoo/blackjack_live/main/public/dealer-avatar.png" alt="Blackjack Live" width="120" />
 </p>
+
+**🎯 Why Open Source?** This project is fully open source so you can learn from it, customize it, or host your own multiplayer blackjack table. Fork it, improve it, make it yours!
 
 ## ✨ Features
 
@@ -58,13 +61,40 @@ Open [http://localhost:3000](http://localhost:3000) to play locally.
 
 ### Deployment
 
-```bash
-# Deploy PartyKit server to edge
-npx partykit deploy
+#### 1. Create a PartyKit Account
 
-# Deploy frontend to Vercel (or your preferred platform)
-vercel
+```bash
+# Sign up / log in to PartyKit (opens browser)
+npx partykit login
 ```
+
+This will open your browser to authenticate with GitHub. PartyKit is free for hobby projects.
+
+#### 2. Deploy PartyKit Server
+
+```bash
+# Deploy the game server to PartyKit's edge network
+npx partykit deploy
+```
+
+You'll get a URL like: `https://blackjack-game.your-username.partykit.dev`
+
+#### 3. Configure Environment
+
+Create a `.env.local` file with your PartyKit URL:
+
+```bash
+NEXT_PUBLIC_PARTYKIT_HOST=blackjack-game.your-username.partykit.dev
+```
+
+#### 4. Deploy Frontend
+
+```bash
+# Deploy to Vercel (or your preferred platform)
+npx vercel
+```
+
+Or connect your GitHub repo to Vercel for automatic deployments.
 
 ## 🏗️ Architecture
 
