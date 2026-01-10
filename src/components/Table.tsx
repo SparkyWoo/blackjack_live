@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { GameState, canSplit, canDouble } from "@/lib/gameTypes";
 import { Seat } from "./Seat";
 import { Dealer, Shoe } from "./Dealer";
@@ -47,7 +46,6 @@ export function Table({
     onSplit,
     onLeaveSeat,
 }: TableProps) {
-    const [selectedChip, setSelectedChip] = useState<ChipValue>(100);
 
     const currentPlayerSeatIndex = gameState.seats.findIndex((s) => s.playerId === playerId);
     const isInSeat = currentPlayerSeatIndex !== -1;
@@ -300,42 +298,44 @@ export function Table({
                             <div className="flex items-center gap-4">
                                 {isBetting ? (
                                     <>
-                                        {/* Chip selection */}
+                                        {/* Current bet display */}
+                                        {currentSeat && currentSeat.bet > 0 && (
+                                            <motion.div
+                                                initial={{ scale: 0 }}
+                                                animate={{ scale: 1 }}
+                                                className="flex items-center gap-2 px-4 py-2 bg-emerald-500/20 rounded-xl border border-emerald-500/30"
+                                            >
+                                                <span className="text-emerald-400 font-bold text-lg">
+                                                    ${currentSeat.bet.toLocaleString()}
+                                                </span>
+                                                <button
+                                                    onClick={onClearBet}
+                                                    className="ml-2 text-red-400 hover:text-red-300 text-xs font-medium
+                                                               hover:bg-red-500/20 px-2 py-1 rounded transition-all"
+                                                >
+                                                    Clear
+                                                </button>
+                                            </motion.div>
+                                        )}
+
+                                        {/* Chip selection - click to bet directly */}
                                         <div className="flex gap-2">
                                             {([10, 50, 100, 500, 1000] as ChipValue[]).map((value) => (
                                                 <Chip
                                                     key={value}
                                                     value={value}
                                                     size="sm"
-                                                    selected={selectedChip === value}
+                                                    selected={false}
                                                     disabled={displayedChips < value}
-                                                    onClick={() => setSelectedChip(value)}
+                                                    onClick={() => onPlaceBet(value)}
                                                 />
                                             ))}
                                         </div>
 
-                                        {/* Bet button */}
-                                        <motion.button
-                                            whileHover={{ scale: 1.05 }}
-                                            whileTap={{ scale: 0.95 }}
-                                            onClick={() => onPlaceBet(selectedChip)}
-                                            disabled={displayedChips < selectedChip}
-                                            className="px-6 py-2.5 bg-gradient-to-b from-amber-400 to-amber-600 hover:from-amber-300 hover:to-amber-500
-                                                       text-black font-bold rounded-xl shadow-lg shadow-amber-500/30
-                                                       disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none transition-all"
-                                        >
-                                            BET ${selectedChip}
-                                        </motion.button>
-
-                                        {currentSeat && currentSeat.bet > 0 && (
-                                            <button
-                                                onClick={onClearBet}
-                                                className="px-4 py-2 text-red-400 hover:text-red-300 text-sm font-medium
-                                                           hover:bg-red-500/10 rounded-lg transition-all"
-                                            >
-                                                Clear
-                                            </button>
-                                        )}
+                                        {/* Betting hint */}
+                                        <span className="text-white/40 text-xs">
+                                            Click chip to bet
+                                        </span>
                                     </>
                                 ) : isMyTurn ? (
                                     <div className="flex gap-3">

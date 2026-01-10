@@ -15,13 +15,16 @@ import {
 } from "../src/lib/gameTypes";
 
 const INITIAL_CHIPS = 10000;
-const BETTING_TIME = 15000; // 15 seconds
+const BETTING_TIME = 15000; // 15 seconds after first bet
 const TURN_TIME = 10000; // 10 seconds
-const PAYOUT_TIME = 5000; // 5 seconds
+const PAYOUT_TIME = 2000; // 2 seconds (reduced from 5 for snappier feel)
+const DEALER_CARD_DELAY = 400; // 400ms between dealer cards (reduced from 800)
+const DEALING_DELAY = 500; // 500ms after dealing before player turns (reduced from 1000)
 
 export default class BlackjackServer implements Party.Server {
     state: GameState;
     timerCallback: (() => void) | null = null;
+    bettingTimerStarted: boolean = false;
 
     constructor(readonly room: Party.Room) {
         this.state = createInitialGameState();
@@ -191,7 +194,7 @@ export default class BlackjackServer implements Party.Server {
         this.checkGameState();
     }
 
-    handlePlaceBet(amount: number, sender: Party.Connection) {
+    async handlePlaceBet(amount: number, sender: Party.Connection) {
         if (this.state.phase !== "betting") {
             this.sendToConnection(sender, { type: "error", message: "Cannot bet now" });
             return;
@@ -209,8 +212,20 @@ export default class BlackjackServer implements Party.Server {
             return;
         }
 
+        // Check if this is the first bet - start the timer
+        const hadBets = this.state.seats.some(s => s.bet > 0);
+
         seat.bet += amount;
         seat.status = "betting";
+
+        // Start timer on first bet from any player
+        if (!hadBets && !this.bettingTimerStarted) {
+            this.bettingTimerStarted = true;
+            this.state.timerEndTime = Date.now() + BETTING_TIME;
+            this.state.timer = BETTING_TIME;
+            await this.startTimer(BETTING_TIME, () => this.onBettingEnd());
+        }
+
         this.broadcastState();
     }
 
@@ -285,13 +300,13 @@ export default class BlackjackServer implements Party.Server {
         const hand = seat.hands[this.state.activeHandIndex];
         if (!hand || !canDouble(hand)) return;
 
-        // Check if player has enough chips
-        if (seat.chips < hand.bet * 2) {
+        // Check if player has enough chips for the additional bet (equal to original bet)
+        if (seat.chips < hand.bet) {
             this.sendToConnection(sender, { type: "error", message: "Not enough chips to double" });
             return;
         }
 
-        // Double the bet
+        // Double the bet - deduct additional chips equal to original bet
         seat.chips -= hand.bet;
         hand.bet *= 2;
         hand.isDoubled = true;
@@ -409,6 +424,9 @@ export default class BlackjackServer implements Party.Server {
             this.reshuffleShoe();
         }
 
+        // Reset betting timer flag
+        this.bettingTimerStarted = false;
+
         // Reset player hands and bets
         for (const seat of this.state.seats) {
             if (seat.playerId) {
@@ -422,10 +440,10 @@ export default class BlackjackServer implements Party.Server {
         this.state.phase = "betting";
         this.state.activePlayerIndex = -1;
         this.state.activeHandIndex = 0;
-        this.state.timerEndTime = Date.now() + BETTING_TIME;
-        this.state.timer = BETTING_TIME;
+        // Don't set timer yet - it starts when first bet is placed
+        this.state.timerEndTime = null;
+        this.state.timer = 0;
 
-        await this.startTimer(BETTING_TIME, () => this.onBettingEnd());
         this.broadcastState();
     }
 
@@ -498,7 +516,7 @@ export default class BlackjackServer implements Party.Server {
         this.broadcastState();
 
         // Small delay then start player turns (using alarm)
-        await this.startTimer(1000, () => this.startPlayerTurns());
+        await this.startTimer(DEALING_DELAY, () => this.startPlayerTurns());
     }
 
     async startPlayerTurns() {
@@ -616,7 +634,7 @@ export default class BlackjackServer implements Party.Server {
         if (value >= 17) {
             this.broadcastState();
             // Use alarm for delay before payouts
-            await this.startTimer(1000, () => this.calculatePayouts());
+            await this.startTimer(DEALER_CARD_DELAY, () => this.calculatePayouts());
             return;
         }
 
@@ -626,7 +644,7 @@ export default class BlackjackServer implements Party.Server {
         this.broadcastState();
 
         // Use alarm for delay before next card
-        await this.startTimer(800, () => this.playDealerHand());
+        await this.startTimer(DEALER_CARD_DELAY, () => this.playDealerHand());
     }
 
     async calculatePayouts() {
