@@ -21,6 +21,7 @@ export interface Seat {
     displayName: string;
     chips: number;
     bet: number;
+    lastBet: number;  // Track previous bet for auto-repeat
     hands: Hand[];
     status: 'empty' | 'waiting' | 'betting' | 'playing' | 'done';
 }
@@ -155,6 +156,7 @@ export function createEmptySeat(): Seat {
         displayName: '',
         chips: 0,
         bet: 0,
+        lastBet: 0,
         hands: [],
         status: 'empty'
     };

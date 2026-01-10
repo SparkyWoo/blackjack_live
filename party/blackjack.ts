@@ -151,6 +151,7 @@ export default class BlackjackServer implements Party.Server {
             displayName,
             chips,
             bet: 0,
+            lastBet: 0,
             hands: [],
             status: "waiting",
         };
@@ -427,12 +428,21 @@ export default class BlackjackServer implements Party.Server {
         // Reset betting timer flag
         this.bettingTimerStarted = false;
 
-        // Reset player hands and bets
+        // Reset player hands and auto-bet previous amount
+        let anyBetsPlaced = false;
         for (const seat of this.state.seats) {
             if (seat.playerId) {
                 seat.hands = [];
-                seat.bet = 0;
                 seat.status = "waiting";
+
+                // Auto-bet the previous bet if they have enough chips
+                if (seat.lastBet > 0 && seat.chips >= seat.lastBet) {
+                    seat.bet = seat.lastBet;
+                    seat.status = "betting";
+                    anyBetsPlaced = true;
+                } else {
+                    seat.bet = 0;
+                }
             }
         }
 
@@ -440,9 +450,18 @@ export default class BlackjackServer implements Party.Server {
         this.state.phase = "betting";
         this.state.activePlayerIndex = -1;
         this.state.activeHandIndex = 0;
-        // Don't set timer yet - it starts when first bet is placed
-        this.state.timerEndTime = null;
-        this.state.timer = 0;
+
+        // If we auto-bet, start the timer
+        if (anyBetsPlaced) {
+            this.bettingTimerStarted = true;
+            this.state.timerEndTime = Date.now() + BETTING_TIME;
+            this.state.timer = BETTING_TIME;
+            await this.startTimer(BETTING_TIME, () => this.onBettingEnd());
+        } else {
+            // Don't set timer yet - it starts when first bet is placed
+            this.state.timerEndTime = null;
+            this.state.timer = 0;
+        }
 
         this.broadcastState();
     }
@@ -460,6 +479,8 @@ export default class BlackjackServer implements Party.Server {
         // Deduct bets from chips and start dealing
         for (const seat of this.state.seats) {
             if (seat.playerId && seat.bet > 0) {
+                // Save the bet for next round auto-bet
+                seat.lastBet = seat.bet;
                 seat.chips -= seat.bet;
                 seat.hands = [
                     {
