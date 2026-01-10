@@ -15,7 +15,7 @@ import {
 } from "../src/lib/gameTypes";
 
 const INITIAL_CHIPS = 10000;
-const BETTING_TIME = 15000; // 15 seconds after first bet
+const BETTING_TIME = 5000; // 5 seconds - restarts on every bet change
 const TURN_TIME = 10000; // 10 seconds
 const PAYOUT_TIME = 2000; // 2 seconds (reduced from 5 for snappier feel)
 const DEALER_CARD_DELAY = 400; // 400ms between dealer cards (reduced from 800)
@@ -218,31 +218,35 @@ export default class BlackjackServer implements Party.Server {
             return;
         }
 
-        // Check if this is the first bet - start the timer
-        const hadBets = this.state.seats.some(s => s.bet > 0);
-
         seat.bet += amount;
         seat.status = "betting";
 
-        // Start timer on first bet from any player
-        if (!hadBets && !this.bettingTimerStarted) {
-            this.bettingTimerStarted = true;
-            this.state.timerEndTime = Date.now() + BETTING_TIME;
-            this.state.timer = BETTING_TIME;
-            await this.startTimer(BETTING_TIME, () => this.onBettingEnd());
-        }
+        // Restart the 5-second timer on every bet change
+        this.bettingTimerStarted = true;
+        this.state.timerEndTime = Date.now() + BETTING_TIME;
+        this.state.timer = BETTING_TIME;
+        await this.startTimer(BETTING_TIME, () => this.onBettingEnd());
 
         this.broadcastState();
     }
 
-    handleClearBet(sender: Party.Connection) {
+    async handleClearBet(sender: Party.Connection) {
         if (this.state.phase !== "betting") return;
 
         const seatIndex = this.state.seats.findIndex((s) => s.playerId === sender.id);
         if (seatIndex === -1) return;
 
+        const previousBet = this.state.seats[seatIndex].bet;
         this.state.seats[seatIndex].bet = 0;
         this.state.seats[seatIndex].status = "waiting";
+
+        // Restart timer if there was a bet change and someone still has a bet
+        if (previousBet > 0 && this.state.seats.some(s => s.bet > 0)) {
+            this.state.timerEndTime = Date.now() + BETTING_TIME;
+            this.state.timer = BETTING_TIME;
+            await this.startTimer(BETTING_TIME, () => this.onBettingEnd());
+        }
+
         this.broadcastState();
     }
 

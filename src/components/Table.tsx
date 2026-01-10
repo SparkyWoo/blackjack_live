@@ -21,7 +21,7 @@ interface TableProps {
     onLeaveSeat: () => void;
 }
 
-const BETTING_TIME = 15000;
+const BETTING_TIME = 5000;  // 5 seconds - restarts on bet changes
 const TURN_TIME = 10000;
 
 // Seat positions in semicircle arc (from left to right)
