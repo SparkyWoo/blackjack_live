@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { usePartySocket } from "@/hooks/usePartySocket";
 import { Table } from "@/components/Table";
 import { motion } from "framer-motion";
@@ -36,6 +35,7 @@ export default function Home() {
     surrender,
     insurance,
     connectionId,
+    lastPayout,
   } = usePartySocket("main-table");
 
   const handleJoinSeat = (seatIndex: number, name: string) => {
@@ -73,6 +73,7 @@ export default function Home() {
       <Table
         gameState={gameState}
         playerId={connectionId}
+        lastPayout={lastPayout}
         onJoinSeat={handleJoinSeat}
         onPlaceBet={placeBet}
         onClearBet={clearBet}

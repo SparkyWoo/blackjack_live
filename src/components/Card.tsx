@@ -105,7 +105,7 @@ export function Card({ card, delay = 0, small = false }: CardProps) {
     );
 }
 
-export function CardStack({ cards, isDealer = false }: { cards: CardType[]; isDealer?: boolean }) {
+export function CardStack({ cards }: { cards: CardType[] }) {
     return (
         <div className="flex" style={{ marginLeft: 0 }}>
             {cards.map((card, index) => (

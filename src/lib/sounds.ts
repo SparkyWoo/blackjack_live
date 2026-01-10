@@ -50,6 +50,11 @@ class SoundManager {
                     volume: 0.3,
                     preload: false,
                 }),
+                yourTurn: new Howl({
+                    src: ["/sounds/your-turn.mp3"],
+                    volume: 0.6,
+                    preload: false,
+                }),
             };
         }
     }
@@ -71,19 +76,28 @@ class SoundManager {
         }
     }
 
-    toggle() {
+    toggle(): boolean {
         this.enabled = !this.enabled;
         return this.enabled;
     }
 
-    isEnabled() {
+    isEnabled(): boolean {
         return this.enabled;
     }
 
     setEnabled(enabled: boolean) {
         this.enabled = enabled;
     }
+
+    getMuted(): boolean {
+        return !this.enabled;
+    }
+
+    setMuted(muted: boolean) {
+        this.enabled = !muted;
+    }
 }
 
 // Singleton
 export const sounds = typeof window !== "undefined" ? new SoundManager() : null;
+

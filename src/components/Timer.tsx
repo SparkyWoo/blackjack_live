@@ -10,13 +10,13 @@ interface TimerProps {
 }
 
 export function Timer({ endTime, maxMs, label }: TimerProps) {
-    const [remaining, setRemaining] = useState(0);
+    // Initialize with computed value to avoid setState in effect
+    const [remaining, setRemaining] = useState(() =>
+        endTime ? Math.max(0, endTime - Date.now()) : 0
+    );
 
     useEffect(() => {
-        if (!endTime) {
-            setRemaining(0);
-            return;
-        }
+        if (!endTime) return;
 
         const update = () => {
             const now = Date.now();

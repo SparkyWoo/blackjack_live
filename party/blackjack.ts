@@ -47,7 +47,7 @@ export default class BlackjackServer implements Party.Server {
         }
     }
 
-    onConnect(conn: Party.Connection, ctx: Party.ConnectionContext) {
+    onConnect(conn: Party.Connection, _ctx: Party.ConnectionContext) {
         // Send current state to new connection
         this.sendToConnection(conn, { type: "state_update", state: this.state });
     }
@@ -58,7 +58,7 @@ export default class BlackjackServer implements Party.Server {
         if (seatIndex !== -1) {
             const seat = this.state.seats[seatIndex];
             // Save chip balance before leaving
-            if (seat.displayName) {
+            if (seat?.displayName) {
                 this.state.chipBalances[seat.displayName] = seat.chips;
             }
             this.state.seats[seatIndex] = createEmptySeat();
@@ -75,7 +75,7 @@ export default class BlackjackServer implements Party.Server {
         try {
             const msg: ClientMessage = JSON.parse(message);
             this.handleMessage(msg, sender);
-        } catch (e) {
+        } catch (_e) {
             this.sendToConnection(sender, { type: "error", message: "Invalid message format" });
         }
     }

@@ -23,6 +23,7 @@ export function usePartySocket(room: string = "main") {
         amount: number;
         result: 'win' | 'lose' | 'push' | 'blackjack';
     } | null>(null);
+    const [connectionId, setConnectionId] = useState<string | null>(null);
     const prevPhaseRef = useRef<string | null>(null);
 
     useEffect(() => {
@@ -37,6 +38,7 @@ export function usePartySocket(room: string = "main") {
             setConnected(true);
             setReconnecting(false);
             setError(null);
+            setConnectionId(socket.id || null);
         });
 
         socket.addEventListener("close", () => {
@@ -165,6 +167,6 @@ export function usePartySocket(room: string = "main") {
         split,
         insurance,
         surrender,
-        connectionId: socketRef.current?.id || null,
+        connectionId,
     };
 }

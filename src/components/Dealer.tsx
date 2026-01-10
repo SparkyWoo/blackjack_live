@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { motion } from "framer-motion";
 import { Card as CardType, calculateHandValue, isBlackjack } from "@/lib/gameTypes";
 import { CardStack } from "./Card";
@@ -23,10 +24,13 @@ export function Dealer({ hand, phase }: DealerProps) {
             <div className="flex items-center gap-3">
                 {/* Avatar */}
                 <div className="relative">
-                    <img
+                    <Image
                         src="/dealer-avatar.png"
                         alt="Dealer"
-                        className="w-12 h-12 rounded-full border-2 border-amber-500/50 shadow-lg"
+                        width={48}
+                        height={48}
+                        priority
+                        className="rounded-full border-2 border-amber-500/50 shadow-lg"
                     />
                     {/* Online indicator */}
                     <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-400 rounded-full border-2 border-black/50" />
@@ -45,7 +49,7 @@ export function Dealer({ hand, phase }: DealerProps) {
             <div className="min-h-[80px] flex items-center justify-center">
                 {hand.length > 0 ? (
                     <div className="relative">
-                        <CardStack cards={hand} isDealer />
+                        <CardStack cards={hand} />
 
                         {/* Value badge */}
                         {showValue && (

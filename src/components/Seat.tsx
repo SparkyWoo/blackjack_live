@@ -12,7 +12,6 @@ interface SeatProps {
     isCurrentPlayer: boolean;
     isActivePlayer: boolean;
     activeHandIndex: number;
-    phase: string;
     onJoin: (name: string) => void;
 }
 
@@ -22,7 +21,6 @@ export function Seat({
     isCurrentPlayer,
     isActivePlayer,
     activeHandIndex,
-    phase,
     onJoin,
 }: SeatProps) {
     const [showJoinInput, setShowJoinInput] = useState(false);
