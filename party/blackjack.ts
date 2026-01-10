@@ -250,6 +250,7 @@ export default class BlackjackServer implements Party.Server {
 
         const previousBet = this.state.seats[seatIndex].bet;
         this.state.seats[seatIndex].bet = 0;
+        this.state.seats[seatIndex].lastBet = 0; // Also clear lastBet to prevent auto-bet
         this.state.seats[seatIndex].status = "waiting";
 
         // Restart timer if there was a bet change and someone still has a bet
