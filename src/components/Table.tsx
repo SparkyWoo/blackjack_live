@@ -17,6 +17,7 @@ interface TableProps {
     onStand: () => void;
     onDouble: () => void;
     onSplit: () => void;
+    onInsurance: (accept: boolean) => void;
     onLeaveSeat: () => void;
 }
 
@@ -44,6 +45,7 @@ export function Table({
     onStand,
     onDouble,
     onSplit,
+    onInsurance,
     onLeaveSeat,
 }: TableProps) {
 
@@ -70,6 +72,7 @@ export function Table({
         waiting: "Waiting for players...",
         betting: "💰 Place your bets!",
         dealing: "🃏 Dealing cards...",
+        insurance: "🛡️ Insurance?",
         player_turn: gameState.activePlayerIndex >= 0
             ? `${gameState.seats[gameState.activePlayerIndex]?.displayName}'s turn`
             : "Player turn",
@@ -384,6 +387,32 @@ export function Table({
                                             </motion.button>
                                         )}
                                     </div>
+                                ) : gameState.phase === "insurance" && currentSeat && currentSeat.bet > 0 && currentSeat.insuranceBet === 0 ? (
+                                    <div className="flex flex-col items-center gap-3">
+                                        <span className="text-amber-400 text-sm font-medium">
+                                            Dealer shows Ace - Insurance? (costs ${Math.floor(currentSeat.bet / 2)})
+                                        </span>
+                                        <div className="flex gap-3">
+                                            <motion.button
+                                                whileHover={{ scale: 1.05, y: -2 }}
+                                                whileTap={{ scale: 0.95 }}
+                                                onClick={() => onInsurance(true)}
+                                                className="px-8 py-3 bg-gradient-to-b from-emerald-500 to-emerald-700 hover:from-emerald-400 hover:to-emerald-600
+                                                           text-white font-bold rounded-xl shadow-lg shadow-emerald-500/30 transition-all"
+                                            >
+                                                YES
+                                            </motion.button>
+                                            <motion.button
+                                                whileHover={{ scale: 1.05, y: -2 }}
+                                                whileTap={{ scale: 0.95 }}
+                                                onClick={() => onInsurance(false)}
+                                                className="px-8 py-3 bg-gradient-to-b from-red-500 to-red-700 hover:from-red-400 hover:to-red-600
+                                                           text-white font-bold rounded-xl shadow-lg shadow-red-500/30 transition-all"
+                                            >
+                                                NO
+                                            </motion.button>
+                                        </div>
+                                    </div>
                                 ) : (
                                     <div className="flex items-center gap-3 text-white/50 text-sm">
                                         <motion.div
@@ -396,7 +425,9 @@ export function Table({
                                                 ? "Waiting for game to start..."
                                                 : gameState.phase === "payout"
                                                     ? "Calculating winnings..."
-                                                    : "Waiting for your turn..."}
+                                                    : gameState.phase === "insurance"
+                                                        ? "Waiting for insurance decisions..."
+                                                        : "Waiting for your turn..."}
                                         </motion.div>
                                     </div>
                                 )}

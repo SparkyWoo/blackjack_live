@@ -24,9 +24,10 @@ export interface Seat {
     lastBet: number;  // Track previous bet for auto-repeat
     hands: Hand[];
     status: 'empty' | 'waiting' | 'betting' | 'playing' | 'done';
+    insuranceBet: number;  // Insurance side bet (half of main bet)
 }
 
-export type GamePhase = 'waiting' | 'betting' | 'dealing' | 'player_turn' | 'dealer_turn' | 'payout';
+export type GamePhase = 'waiting' | 'betting' | 'dealing' | 'insurance' | 'player_turn' | 'dealer_turn' | 'payout';
 
 export interface GameState {
     phase: GamePhase;
@@ -55,6 +56,7 @@ export type ClientMessage =
     | { type: 'stand' }
     | { type: 'double' }
     | { type: 'split' }
+    | { type: 'insurance'; accept: boolean }  // Accept or decline insurance
     | { type: 'request_state' };
 
 // Message types from server to client
@@ -157,6 +159,7 @@ export function createEmptySeat(): Seat {
         chips: 0,
         bet: 0,
         lastBet: 0,
+        insuranceBet: 0,
         hands: [],
         status: 'empty'
     };

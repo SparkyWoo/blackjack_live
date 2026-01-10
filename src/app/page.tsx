@@ -18,6 +18,7 @@ export default function Home() {
     stand,
     double,
     split,
+    insurance,
     connectionId,
   } = usePartySocket("main-table");
 
@@ -60,6 +61,7 @@ export default function Home() {
         onStand={stand}
         onDouble={double}
         onSplit={split}
+        onInsurance={insurance}
         onLeaveSeat={leaveSeat}
       />
 

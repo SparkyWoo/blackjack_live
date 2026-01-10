@@ -122,6 +122,10 @@ export function usePartySocket(room: string = "main") {
         send({ type: "split" });
     }, [send]);
 
+    const insurance = useCallback((accept: boolean) => {
+        send({ type: "insurance", accept });
+    }, [send]);
+
     return {
         gameState,
         connected,
@@ -137,6 +141,7 @@ export function usePartySocket(room: string = "main") {
         stand,
         double,
         split,
+        insurance,
         connectionId: socketRef.current?.id || null,
     };
 }

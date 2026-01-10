@@ -114,6 +114,10 @@ export default class BlackjackServer implements Party.Server {
                 this.handleSplit(sender);
                 break;
 
+            case "insurance":
+                this.handleInsurance(msg.accept, sender);
+                break;
+
             default:
                 this.sendToConnection(sender, { type: "error", message: "Unknown message type" });
         }
@@ -152,6 +156,7 @@ export default class BlackjackServer implements Party.Server {
             chips,
             bet: 0,
             lastBet: 0,
+            insuranceBet: 0,
             hands: [],
             status: "waiting",
         };
@@ -381,6 +386,104 @@ export default class BlackjackServer implements Party.Server {
         this.broadcastState();
     }
 
+    // Insurance methods
+    async startInsurancePhase() {
+        this.state.phase = "insurance";
+        this.state.timerEndTime = Date.now() + TURN_TIME;
+        this.state.timer = TURN_TIME;
+
+        // Mark all players with bets as needing to decide on insurance
+        // We track this by keeping insuranceBet at 0 - they haven't decided yet
+        // A value of -1 means they declined, >0 means they accepted
+
+        this.broadcastState();
+        await this.startTimer(TURN_TIME, () => this.onInsuranceTimeout());
+    }
+
+    async onInsuranceTimeout() {
+        // Anyone who hasn't decided declines insurance
+        for (const seat of this.state.seats) {
+            if (seat.playerId && seat.bet > 0 && seat.insuranceBet === 0) {
+                seat.insuranceBet = -1; // Declined
+            }
+        }
+        await this.checkInsuranceComplete();
+    }
+
+    handleInsurance(accept: boolean, sender: Party.Connection) {
+        if (this.state.phase !== "insurance") {
+            this.sendToConnection(sender, { type: "error", message: "Insurance not available" });
+            return;
+        }
+
+        const seatIndex = this.state.seats.findIndex((s) => s.playerId === sender.id);
+        if (seatIndex === -1) return;
+
+        const seat = this.state.seats[seatIndex];
+        if (seat.bet <= 0 || seat.insuranceBet !== 0) {
+            // No bet or already decided
+            return;
+        }
+
+        if (accept) {
+            // Insurance costs half the original bet
+            const insuranceCost = Math.floor(seat.bet / 2);
+            if (seat.chips >= insuranceCost) {
+                seat.chips -= insuranceCost;
+                seat.insuranceBet = insuranceCost;
+            } else {
+                // Not enough chips - treat as decline
+                seat.insuranceBet = -1;
+            }
+        } else {
+            seat.insuranceBet = -1; // Declined
+        }
+
+        this.broadcastState();
+        this.checkInsuranceComplete();
+    }
+
+    async checkInsuranceComplete() {
+        // Check if all players with bets have decided
+        const needsDecision = this.state.seats.some(
+            s => s.playerId && s.bet > 0 && s.insuranceBet === 0
+        );
+
+        if (needsDecision) return;
+
+        await this.clearTimer();
+
+        // Check if dealer has blackjack
+        const dealerHasBJ = isBlackjack(this.state.dealerHand);
+
+        if (dealerHasBJ) {
+            // Reveal hole card
+            this.state.dealerHand[1].faceUp = true;
+            this.broadcastState();
+
+            // Pay out insurance bets (2:1)
+            for (const seat of this.state.seats) {
+                if (seat.insuranceBet > 0) {
+                    // Insurance pays 2:1, so player gets back bet + 2x bet = 3x
+                    seat.chips += seat.insuranceBet * 3;
+                }
+            }
+
+            // Go directly to payout (dealer blackjack beats all except player blackjacks)
+            await this.startTimer(DEALING_DELAY, () => this.calculatePayouts());
+        } else {
+            // Dealer doesn't have blackjack - insurance bets are lost
+            // Reset insurance flags and continue to player turns
+            for (const seat of this.state.seats) {
+                if (seat.insuranceBet === -1) {
+                    seat.insuranceBet = 0;
+                }
+            }
+            this.broadcastState();
+            await this.startTimer(DEALING_DELAY, () => this.startPlayerTurns());
+        }
+    }
+
     drawCard(): Card {
         if (this.state.shoe.length === 0) {
             this.reshuffleShoe();
@@ -522,7 +625,7 @@ export default class BlackjackServer implements Party.Server {
             seat.hands[0].cards.push(card);
         }
 
-        // Second card to dealer (face down)
+        // Second card to dealer (face down - hole card)
         const dealerCard2 = this.drawCard();
         dealerCard2.faceUp = false;
         this.state.dealerHand.push(dealerCard2);
@@ -534,10 +637,29 @@ export default class BlackjackServer implements Party.Server {
             }
         }
 
+        // Reset insurance bets
+        for (const seat of this.state.seats) {
+            seat.insuranceBet = 0;
+        }
+
         this.broadcastState();
 
-        // Small delay then start player turns (using alarm)
-        await this.startTimer(DEALING_DELAY, () => this.startPlayerTurns());
+        // Check if dealer shows Ace - offer insurance
+        if (dealerCard1.rank === "A") {
+            await this.startInsurancePhase();
+        } else {
+            // Check for dealer blackjack (with 10-value showing)
+            const tenValues = ["10", "J", "Q", "K"];
+            if (tenValues.includes(dealerCard1.rank) && isBlackjack(this.state.dealerHand)) {
+                // Dealer has blackjack - reveal and go to payout
+                this.state.dealerHand[1].faceUp = true;
+                this.broadcastState();
+                await this.startTimer(DEALING_DELAY, () => this.calculatePayouts());
+            } else {
+                // Normal flow - start player turns
+                await this.startTimer(DEALING_DELAY, () => this.startPlayerTurns());
+            }
+        }
     }
 
     async startPlayerTurns() {
