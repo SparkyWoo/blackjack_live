@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo, useRef, useEffect } from "react";
 import { GameState, canSplit, canDouble } from "@/lib/gameTypes";
 import { Seat } from "./Seat";
 import { Dealer, Shoe } from "./Dealer";
@@ -7,6 +8,9 @@ import { Timer } from "./Timer";
 import { Chip, ChipValue } from "./Chip";
 import { motion, AnimatePresence } from "framer-motion";
 import { sounds } from "@/lib/sounds";
+
+// Memoized animation variants for performance
+const pulseAnimation = { opacity: [0.4, 0.8, 0.4] };
 
 interface TableProps {
     gameState: GameState;
@@ -171,12 +175,12 @@ export function Table({
                 />
             </div>
 
-            {/* Table rules text - centered on table */}
-            <div className="absolute left-1/2 -translate-x-1/2 top-[38%] text-center pointer-events-none">
-                <div className="text-amber-400/30 text-lg font-serif tracking-[0.3em] font-bold">
+            {/* Table rules text - centered on table - hidden on small screens */}
+            <div className="absolute left-1/2 -translate-x-1/2 top-[38%] text-center pointer-events-none hidden sm:block">
+                <div className="text-amber-400/40 text-lg font-serif tracking-[0.3em] font-bold">
                     BLACKJACK PAYS 3 TO 2
                 </div>
-                <div className="text-amber-400/20 text-sm font-serif mt-2 tracking-widest">
+                <div className="text-amber-400/30 text-sm font-serif mt-2 tracking-widest">
                     DEALER STANDS ON ALL 17s
                 </div>
             </div>
@@ -255,8 +259,8 @@ export function Table({
 
             {/* Spectators */}
             {gameState.spectators.length > 0 && (
-                <div className="absolute bottom-36 right-6 flex items-center gap-2 px-3 py-1.5 bg-black/40 rounded-full">
-                    <span className="text-white/60 text-xs">👁️ {gameState.spectators.length} watching</span>
+                <div className="absolute bottom-36 right-2 sm:right-6 flex items-center gap-2 px-3 py-1.5 bg-black/40 rounded-full">
+                    <span className="text-white/70 text-xs">👁️ {gameState.spectators.length} watching</span>
                 </div>
             )}
 
@@ -273,7 +277,7 @@ export function Table({
                         {/* Gradient backdrop */}
                         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/90 to-transparent pointer-events-none" />
 
-                        <div className="relative h-28 px-6 flex items-center justify-between">
+                        <div className="relative h-28 px-3 sm:px-6 flex items-center justify-between">
                             {/* Left: Your info */}
                             <div className="flex flex-col gap-1 min-w-[120px]">
                                 <div className="flex items-center gap-2">
@@ -326,7 +330,7 @@ export function Table({
                                         )}
 
                                         {/* Chip selection - click to bet directly */}
-                                        <div className="flex gap-2">
+                                        <div className="flex gap-1 sm:gap-2 flex-wrap justify-center">
                                             {([10, 50, 100, 500, 1000] as ChipValue[]).map((value) => (
                                                 <Chip
                                                     key={value}
@@ -342,8 +346,24 @@ export function Table({
                                             ))}
                                         </div>
 
+                                        {/* All-In Button */}
+                                        {displayedChips > 0 && (
+                                            <motion.button
+                                                whileHover={{ scale: 1.05 }}
+                                                whileTap={{ scale: 0.95 }}
+                                                onClick={() => {
+                                                    sounds?.play("chipClick");
+                                                    onPlaceBet(displayedChips);
+                                                }}
+                                                className="px-4 py-2 bg-gradient-to-b from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500
+                                                           text-black font-bold text-sm rounded-lg shadow-lg shadow-amber-500/30 transition-all"
+                                            >
+                                                ALL IN
+                                            </motion.button>
+                                        )}
+
                                         {/* Betting hint */}
-                                        <span className="text-white/40 text-xs">
+                                        <span className="text-white/50 text-xs hidden sm:inline">
                                             Click chip to bet
                                         </span>
                                     </>
@@ -433,13 +453,13 @@ export function Table({
                                         </div>
                                     </div>
                                 ) : (
-                                    <div className="flex items-center gap-3 text-white/50 text-sm">
+                                    <div className="flex items-center gap-3 text-white/60 text-sm">
                                         <motion.div
-                                            animate={{ opacity: [0.3, 0.7, 0.3] }}
+                                            animate={pulseAnimation}
                                             transition={{ duration: 2, repeat: Infinity }}
                                             className="flex items-center gap-2"
                                         >
-                                            <div className="w-2 h-2 rounded-full bg-white/40" />
+                                            <div className="w-2 h-2 rounded-full bg-white/50" />
                                             {gameState.phase === "waiting"
                                                 ? "Waiting for game to start..."
                                                 : gameState.phase === "payout"

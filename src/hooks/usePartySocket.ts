@@ -10,6 +10,7 @@ const PARTYKIT_HOST = process.env.NEXT_PUBLIC_PARTYKIT_HOST || "localhost:1999";
 export function usePartySocket(room: string = "main") {
     const [gameState, setGameState] = useState<GameState | null>(null);
     const [connected, setConnected] = useState(false);
+    const [reconnecting, setReconnecting] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const socketRef = useRef<PartySocket | null>(null);
     const [lastAction, setLastAction] = useState<{
@@ -34,11 +35,13 @@ export function usePartySocket(room: string = "main") {
 
         socket.addEventListener("open", () => {
             setConnected(true);
+            setReconnecting(false);
             setError(null);
         });
 
         socket.addEventListener("close", () => {
             setConnected(false);
+            setReconnecting(true); // PartySocket auto-reconnects
         });
 
         socket.addEventListener("error", () => {
@@ -147,6 +150,7 @@ export function usePartySocket(room: string = "main") {
     return {
         gameState,
         connected,
+        reconnecting,
         error,
         lastAction,
         lastPayout,

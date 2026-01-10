@@ -5,10 +5,25 @@ import { usePartySocket } from "@/hooks/usePartySocket";
 import { Table } from "@/components/Table";
 import { motion } from "framer-motion";
 
+// Safe localStorage wrapper for private browsing mode
+function safeLocalStorage(action: 'get' | 'set', key: string, value?: string): string | null {
+  try {
+    if (action === 'get') {
+      return localStorage.getItem(key);
+    } else if (value !== undefined) {
+      localStorage.setItem(key, value);
+    }
+  } catch {
+    // Silently fail in private browsing mode
+  }
+  return null;
+}
+
 export default function Home() {
   const {
     gameState,
     connected,
+    reconnecting,
     error,
     joinSeat,
     leaveSeat,
@@ -24,20 +39,23 @@ export default function Home() {
   } = usePartySocket("main-table");
 
   const handleJoinSeat = (seatIndex: number, name: string) => {
-    // Save name to localStorage for persistence
-    localStorage.setItem("blackjack_name", name);
+    // Save name to localStorage for persistence (safe for private browsing)
+    safeLocalStorage('set', "blackjack_name", name);
     joinSeat(seatIndex, name);
   };
 
-  // Loading state
+  // Loading/reconnecting state
   if (!connected) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#061a10]">
+      <div className="min-h-screen flex flex-col gap-4 items-center justify-center bg-[#061a10]">
         <motion.div
           animate={{ rotate: 360 }}
           transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
           className="w-10 h-10 border-3 border-amber-400 border-t-transparent rounded-full"
         />
+        {reconnecting && (
+          <span className="text-amber-400/80 text-sm animate-pulse">Reconnecting...</span>
+        )}
       </div>
     );
   }

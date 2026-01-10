@@ -68,38 +68,64 @@ export function Seat({
                                     exit={{ opacity: 0 }}
                                     className="flex flex-col items-center gap-1"
                                 >
-                                    <span className="text-white/30 text-xl">+</span>
-                                    <span className="text-white/30 text-[10px]">Join</span>
+                                    <span className="text-white/40 text-xl">+</span>
+                                    <span className="text-white/40 text-[10px]">Join</span>
                                 </motion.div>
                             ) : (
-                                <motion.input
+                                <motion.div
                                     key="input"
                                     initial={{ opacity: 0, scale: 0.8 }}
                                     animate={{ opacity: 1, scale: 1 }}
                                     exit={{ opacity: 0, scale: 0.8 }}
-                                    autoFocus
-                                    value={nameInput}
-                                    onChange={(e) => setNameInput(e.target.value)}
-                                    onKeyDown={(e) => {
-                                        if (e.key === "Enter" && nameInput.trim()) {
-                                            onJoin(nameInput.trim());
-                                            setShowJoinInput(false);
-                                        } else if (e.key === "Escape") {
-                                            setShowJoinInput(false);
-                                            setNameInput("");
-                                        }
-                                    }}
-                                    onBlur={() => {
-                                        if (!nameInput.trim()) {
-                                            setShowJoinInput(false);
-                                        }
-                                    }}
-                                    placeholder="Name"
-                                    className="w-16 h-9 text-center text-xs bg-black/70 border-2 border-amber-400/60 
-                                               rounded-lg text-white placeholder-white/40 focus:outline-none 
-                                               focus:border-amber-400 shadow-lg shadow-amber-400/20"
-                                    maxLength={12}
-                                />
+                                    className="flex flex-col items-center gap-2"
+                                    onClick={(e) => e.stopPropagation()}
+                                >
+                                    <input
+                                        autoFocus
+                                        value={nameInput}
+                                        onChange={(e) => setNameInput(e.target.value)}
+                                        onKeyDown={(e) => {
+                                            if (e.key === "Enter" && nameInput.trim()) {
+                                                onJoin(nameInput.trim());
+                                                setShowJoinInput(false);
+                                            } else if (e.key === "Escape") {
+                                                setShowJoinInput(false);
+                                                setNameInput("");
+                                            }
+                                        }}
+                                        placeholder="Your name"
+                                        className="w-20 h-8 text-center text-xs bg-black/80 border-2 border-amber-400/60 
+                                                   rounded-lg text-white placeholder-white/50 focus:outline-none 
+                                                   focus:border-amber-400 shadow-lg shadow-amber-400/20"
+                                        maxLength={12}
+                                    />
+                                    <div className="flex gap-1">
+                                        <button
+                                            onClick={() => {
+                                                if (nameInput.trim()) {
+                                                    onJoin(nameInput.trim());
+                                                    setShowJoinInput(false);
+                                                }
+                                            }}
+                                            disabled={!nameInput.trim()}
+                                            className={`px-2 py-1 text-[10px] font-bold rounded transition-all
+                                                ${nameInput.trim()
+                                                    ? 'bg-emerald-500 text-white hover:bg-emerald-400'
+                                                    : 'bg-gray-600 text-gray-400 cursor-not-allowed'}`}
+                                        >
+                                            Join
+                                        </button>
+                                        <button
+                                            onClick={() => {
+                                                setShowJoinInput(false);
+                                                setNameInput("");
+                                            }}
+                                            className="px-2 py-1 text-[10px] font-bold rounded bg-gray-700 text-white/70 hover:bg-gray-600 transition-all"
+                                        >
+                                            ✕
+                                        </button>
+                                    </div>
+                                </motion.div>
                             )}
                         </AnimatePresence>
                     </div>

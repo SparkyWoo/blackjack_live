@@ -30,6 +30,14 @@ export default class BlackjackServer implements Party.Server {
         this.state = createInitialGameState();
     }
 
+    // Load persisted chip balances when server starts
+    async onStart() {
+        const storedBalances = await this.room.storage.get<Record<string, number>>("chipBalances");
+        if (storedBalances) {
+            this.state.chipBalances = storedBalances;
+        }
+    }
+
     // PartyKit alarm handler - this is how timers work in PartyKit
     async onAlarm() {
         if (this.timerCallback) {
@@ -881,9 +889,12 @@ export default class BlackjackServer implements Party.Server {
                 this.broadcast({ type: "payout", seatIndex, amount: payout, result });
             }
 
-            // Save updated chip balance
+            // Save updated chip balance to state
             this.state.chipBalances[seat.displayName] = seat.chips;
         }
+
+        // Persist chip balances to durable storage
+        await this.room.storage.put("chipBalances", this.state.chipBalances);
 
         this.state.timerEndTime = Date.now() + PAYOUT_TIME;
         this.broadcastState();
