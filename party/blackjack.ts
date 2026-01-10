@@ -519,6 +519,9 @@ export default class BlackjackServer implements Party.Server {
         const dealerHasBJ = isBlackjack(this.state.dealerHand);
 
         if (dealerHasBJ) {
+            // Dealer has blackjack - set phase to prevent player actions
+            this.state.phase = "dealer_turn";
+
             // Reveal hole card
             this.state.dealerHand[1].faceUp = true;
             this.broadcastState();
@@ -713,7 +716,8 @@ export default class BlackjackServer implements Party.Server {
             // Check for dealer blackjack (with 10-value showing)
             const tenValues = ["10", "J", "Q", "K"];
             if (tenValues.includes(dealerCard1.rank) && isBlackjack(this.state.dealerHand)) {
-                // Dealer has blackjack - reveal and go to payout
+                // Dealer has blackjack - set phase to prevent player actions
+                this.state.phase = "dealer_turn";
                 this.state.dealerHand[1].faceUp = true;
                 this.broadcastState();
                 await this.startTimer(DEALING_DELAY, () => this.calculatePayouts());
