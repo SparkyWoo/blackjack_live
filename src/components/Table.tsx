@@ -8,6 +8,8 @@ import { Timer } from "./Timer";
 import { Chip, ChipValue } from "./Chip";
 import { LazyMotion, domAnimation, m, AnimatePresence } from "framer-motion";
 import { sounds } from "@/lib/sounds";
+import { haptic } from "@/lib/haptics";
+import { Leaderboard } from "./Leaderboard";
 
 // Memoized animation variants for performance
 const pulseAnimation = { opacity: [0.4, 0.8, 0.4] };
@@ -20,6 +22,7 @@ interface TableProps {
         amount: number;
         result: 'win' | 'lose' | 'push' | 'blackjack';
     } | null;
+    leaderboard: Record<string, number> | null;
     onJoinSeat: (seatIndex: number, name: string) => void;
     onPlaceBet: (amount: number) => void;
     onClearBet: () => void;
@@ -30,6 +33,7 @@ interface TableProps {
     onSurrender: () => void;
     onInsurance: (accept: boolean) => void;
     onLeaveSeat: () => void;
+    onRequestLeaderboard: () => void;
 }
 
 const BETTING_TIME = 5000;  // 5 seconds - restarts on bet changes
@@ -50,6 +54,7 @@ export function Table({
     gameState,
     playerId,
     lastPayout,
+    leaderboard,
     onJoinSeat,
     onPlaceBet,
     onClearBet,
@@ -60,10 +65,12 @@ export function Table({
     onSurrender,
     onInsurance,
     onLeaveSeat,
+    onRequestLeaderboard,
 }: TableProps) {
     // Mute toggle state
     const [isMuted, setIsMuted] = useState(false);
     const [showKeyboardHints, setShowKeyboardHints] = useState(false);
+    const [showLeaderboard, setShowLeaderboard] = useState(false);
     const prevIsMyTurnRef = useRef(false);
 
     const currentPlayerSeatIndex = gameState.seats.findIndex((s) => s.playerId === playerId);
@@ -85,10 +92,11 @@ export function Table({
     const canSplitHand = activeHand && canSplit(activeHand) && displayedChips >= activeHand.bet && (currentSeat?.hands.length ?? 0) < 4;
     const canSurrenderHand = activeHand && activeHand.cards.length === 2 && !activeHand.isSplit;
 
-    // Play "your turn" sound when it becomes the player's turn
+    // Play "your turn" sound and haptic when it becomes the player's turn
     useEffect(() => {
         if (isMyTurn && !prevIsMyTurnRef.current) {
             sounds?.play("yourTurn");
+            haptic("medium");
         }
         prevIsMyTurnRef.current = isMyTurn;
     }, [isMyTurn]);
@@ -272,6 +280,22 @@ export function Table({
                     <div className="flex items-center gap-3">
                         <Shoe cardsRemaining={gameState.shoe.length} />
 
+                        {/* Leaderboard button */}
+                        <button
+                            onClick={() => {
+                                haptic("light");
+                                onRequestLeaderboard();
+                                setShowLeaderboard(true);
+                            }}
+                            aria-label="View leaderboard"
+                            className="p-2 text-white/60 hover:text-amber-400 hover:bg-amber-400/10 rounded-lg transition-all"
+                            title="Leaderboard"
+                        >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                            </svg>
+                        </button>
+
                         {/* Mute toggle button */}
                         <button
                             onClick={handleMuteToggle}
@@ -429,7 +453,7 @@ export function Table({
                                             )}
 
                                             {/* Chip selection - click to bet directly */}
-                                            <div className="flex gap-1 sm:gap-2 flex-wrap justify-center">
+                                            <div className="flex gap-1.5 sm:gap-2 overflow-x-auto max-w-[280px] sm:max-w-none pb-1 sm:pb-0 scrollbar-hide">
                                                 {([10, 50, 100, 500, 1000] as ChipValue[]).map((value) => (
                                                     <Chip
                                                         key={value}
@@ -468,15 +492,15 @@ export function Table({
                                         </>
                                     ) : isMyTurn ? (
                                         <div className="flex flex-col items-center gap-2">
-                                            <div className="flex gap-3">
+                                            <div className="flex gap-2 sm:gap-3 flex-wrap justify-center">
                                                 {/* Action buttons with ARIA labels */}
                                                 <m.button
                                                     whileHover={{ scale: 1.05, y: -2 }}
                                                     whileTap={{ scale: 0.95 }}
-                                                    onClick={onHit}
+                                                    onClick={() => { haptic("light"); onHit(); }}
                                                     aria-label="Hit - take another card (keyboard: H)"
-                                                    className="px-8 py-3 bg-gradient-to-b from-emerald-500 to-emerald-700 hover:from-emerald-400 hover:to-emerald-600
-                                                       text-white font-bold rounded-xl shadow-lg shadow-emerald-500/30 transition-all relative"
+                                                    className="px-5 sm:px-8 py-2.5 sm:py-3 bg-gradient-to-b from-emerald-500 to-emerald-700 hover:from-emerald-400 hover:to-emerald-600
+                                                       text-white font-bold text-sm sm:text-base rounded-xl shadow-lg shadow-emerald-500/30 transition-all relative"
                                                 >
                                                     HIT
                                                     {showKeyboardHints && (
@@ -487,10 +511,10 @@ export function Table({
                                                 <m.button
                                                     whileHover={{ scale: 1.05, y: -2 }}
                                                     whileTap={{ scale: 0.95 }}
-                                                    onClick={onStand}
+                                                    onClick={() => { haptic("light"); onStand(); }}
                                                     aria-label="Stand - keep your cards (keyboard: S)"
-                                                    className="px-8 py-3 bg-gradient-to-b from-red-500 to-red-700 hover:from-red-400 hover:to-red-600
-                                                       text-white font-bold rounded-xl shadow-lg shadow-red-500/30 transition-all relative"
+                                                    className="px-5 sm:px-8 py-2.5 sm:py-3 bg-gradient-to-b from-red-500 to-red-700 hover:from-red-400 hover:to-red-600
+                                                       text-white font-bold text-sm sm:text-base rounded-xl shadow-lg shadow-red-500/30 transition-all relative"
                                                 >
                                                     STAND
                                                     {showKeyboardHints && (
@@ -502,10 +526,10 @@ export function Table({
                                                     <m.button
                                                         whileHover={{ scale: 1.05, y: -2 }}
                                                         whileTap={{ scale: 0.95 }}
-                                                        onClick={onDouble}
+                                                        onClick={() => { haptic("light"); onDouble(); }}
                                                         aria-label="Double down - double your bet and take one card (keyboard: D)"
-                                                        className="px-6 py-3 bg-gradient-to-b from-purple-500 to-purple-700 hover:from-purple-400 hover:to-purple-600
-                                                           text-white font-bold rounded-xl shadow-lg shadow-purple-500/30 transition-all relative"
+                                                        className="px-4 sm:px-6 py-2.5 sm:py-3 bg-gradient-to-b from-purple-500 to-purple-700 hover:from-purple-400 hover:to-purple-600
+                                                           text-white font-bold text-sm sm:text-base rounded-xl shadow-lg shadow-purple-500/30 transition-all relative"
                                                     >
                                                         DOUBLE
                                                         {showKeyboardHints && (
@@ -518,10 +542,10 @@ export function Table({
                                                     <m.button
                                                         whileHover={{ scale: 1.05, y: -2 }}
                                                         whileTap={{ scale: 0.95 }}
-                                                        onClick={onSplit}
+                                                        onClick={() => { haptic("light"); onSplit(); }}
                                                         aria-label="Split - split your pair into two hands (keyboard: P)"
-                                                        className="px-6 py-3 bg-gradient-to-b from-blue-500 to-blue-700 hover:from-blue-400 hover:to-blue-600
-                                                           text-white font-bold rounded-xl shadow-lg shadow-blue-500/30 transition-all relative"
+                                                        className="px-4 sm:px-6 py-2.5 sm:py-3 bg-gradient-to-b from-blue-500 to-blue-700 hover:from-blue-400 hover:to-blue-600
+                                                           text-white font-bold text-sm sm:text-base rounded-xl shadow-lg shadow-blue-500/30 transition-all relative"
                                                     >
                                                         SPLIT
                                                         {showKeyboardHints && (
@@ -534,10 +558,10 @@ export function Table({
                                                     <m.button
                                                         whileHover={{ scale: 1.05, y: -2 }}
                                                         whileTap={{ scale: 0.95 }}
-                                                        onClick={onSurrender}
+                                                        onClick={() => { haptic("light"); onSurrender(); }}
                                                         aria-label="Surrender - forfeit half your bet (keyboard: R)"
-                                                        className="px-6 py-3 bg-gradient-to-b from-gray-500 to-gray-700 hover:from-gray-400 hover:to-gray-600
-                                                           text-white font-bold rounded-xl shadow-lg shadow-gray-500/30 transition-all text-sm relative"
+                                                        className="px-3 sm:px-6 py-2.5 sm:py-3 bg-gradient-to-b from-gray-500 to-gray-700 hover:from-gray-400 hover:to-gray-600
+                                                           text-white font-bold rounded-xl shadow-lg shadow-gray-500/30 transition-all text-xs sm:text-sm relative"
                                                     >
                                                         SURRENDER
                                                         {showKeyboardHints && (
@@ -701,6 +725,13 @@ export function Table({
                     )}
                 </AnimatePresence>
             </div>
+
+            {/* Leaderboard Modal */}
+            <Leaderboard
+                isOpen={showLeaderboard}
+                onClose={() => setShowLeaderboard(false)}
+                balances={leaderboard || {}}
+            />
         </LazyMotion>
     );
 }

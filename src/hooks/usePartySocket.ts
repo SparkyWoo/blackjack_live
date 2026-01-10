@@ -23,6 +23,7 @@ export function usePartySocket(room: string = "main") {
         amount: number;
         result: 'win' | 'lose' | 'push' | 'blackjack';
     } | null>(null);
+    const [leaderboard, setLeaderboard] = useState<Record<string, number> | null>(null);
     const [connectionId, setConnectionId] = useState<string | null>(null);
     const prevPhaseRef = useRef<string | null>(null);
 
@@ -90,6 +91,9 @@ export function usePartySocket(room: string = "main") {
                             sounds?.play("lose");
                         }
                         break;
+                    case "leaderboard":
+                        setLeaderboard(msg.balances);
+                        break;
                 }
             } catch (e) {
                 console.error("Failed to parse message:", e);
@@ -151,6 +155,10 @@ export function usePartySocket(room: string = "main") {
         send({ type: "surrender" });
     }, [send]);
 
+    const requestLeaderboard = useCallback(() => {
+        send({ type: "request_leaderboard" });
+    }, [send]);
+
     return {
         gameState,
         connected,
@@ -158,6 +166,7 @@ export function usePartySocket(room: string = "main") {
         error,
         lastAction,
         lastPayout,
+        leaderboard,
         joinSeat,
         leaveSeat,
         spectate,
@@ -169,6 +178,7 @@ export function usePartySocket(room: string = "main") {
         split,
         insurance,
         surrender,
+        requestLeaderboard,
         connectionId,
     };
 }

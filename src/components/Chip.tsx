@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { haptic } from "@/lib/haptics";
 
 export type ChipValue = 10 | 50 | 100 | 500 | 1000;
 
@@ -25,11 +26,18 @@ export function Chip({ value, onClick, disabled = false, selected = false, size 
     const dims = size === "sm" ? "w-11 h-11" : "w-14 h-14";
     const fontSize = size === "sm" ? "text-[11px]" : "text-sm";
 
+    const handleClick = () => {
+        if (!disabled && onClick) {
+            haptic("light");
+            onClick();
+        }
+    };
+
     return (
         <motion.button
             whileHover={disabled ? {} : { scale: 1.12, y: -4, rotate: 5 }}
             whileTap={disabled ? {} : { scale: 0.92 }}
-            onClick={onClick}
+            onClick={handleClick}
             disabled={disabled}
             className={`${dims} rounded-full font-bold relative transition-all duration-200
                 ${disabled ? "opacity-30 cursor-not-allowed grayscale" : "cursor-pointer"}

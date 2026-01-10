@@ -58,7 +58,8 @@ export type ClientMessage =
     | { type: 'split' }
     | { type: 'surrender' }
     | { type: 'insurance'; accept: boolean }  // Accept or decline insurance
-    | { type: 'request_state' };
+    | { type: 'request_state' }
+    | { type: 'request_leaderboard' };
 
 // Message types from server to client
 export type ServerMessage =
@@ -66,7 +67,8 @@ export type ServerMessage =
     | { type: 'error'; message: string }
     | { type: 'player_action'; playerId: string; action: string; seatIndex: number }
     | { type: 'card_dealt'; target: 'player' | 'dealer'; seatIndex?: number; handIndex?: number; card: Card }
-    | { type: 'payout'; seatIndex: number; amount: number; result: 'win' | 'lose' | 'push' | 'blackjack' };
+    | { type: 'payout'; seatIndex: number; amount: number; result: 'win' | 'lose' | 'push' | 'blackjack' }
+    | { type: 'leaderboard'; balances: Record<string, number> };
 
 // Card utilities
 export function createDeck(): Card[] {

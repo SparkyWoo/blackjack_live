@@ -2,6 +2,7 @@
 
 import { usePartySocket } from "@/hooks/usePartySocket";
 import { Table } from "@/components/Table";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { motion } from "framer-motion";
 
 // Safe localStorage wrapper for private browsing mode
@@ -36,6 +37,8 @@ export default function Home() {
     insurance,
     connectionId,
     lastPayout,
+    leaderboard,
+    requestLeaderboard,
   } = usePartySocket("main-table");
 
   const handleJoinSeat = (seatIndex: number, name: string) => {
@@ -70,22 +73,25 @@ export default function Home() {
 
   return (
     <>
-      <Table
-        gameState={gameState}
-        playerId={connectionId}
-        lastPayout={lastPayout}
-        onJoinSeat={handleJoinSeat}
-        onPlaceBet={placeBet}
-        onClearBet={clearBet}
-        onHit={hit}
-        onStand={stand}
-        onDouble={double}
-        onSplit={split}
-        onSurrender={surrender}
-        onInsurance={insurance}
-        onLeaveSeat={leaveSeat}
-      />
-
+      <ErrorBoundary>
+        <Table
+          gameState={gameState}
+          playerId={connectionId}
+          lastPayout={lastPayout}
+          leaderboard={leaderboard}
+          onJoinSeat={handleJoinSeat}
+          onPlaceBet={placeBet}
+          onClearBet={clearBet}
+          onHit={hit}
+          onStand={stand}
+          onDouble={double}
+          onSplit={split}
+          onSurrender={surrender}
+          onInsurance={insurance}
+          onLeaveSeat={leaveSeat}
+          onRequestLeaderboard={requestLeaderboard}
+        />
+      </ErrorBoundary>
       {/* Error toast */}
       {error && (
         <motion.div

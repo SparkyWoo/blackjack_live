@@ -37,6 +37,12 @@
 - **Reconnection Handling** - Seamless recovery from network interruptions
 - **Optimized Bundle** - LazyMotion for reduced JS bundle size
 - **TypeScript** - Full type safety throughout
+- **Error Boundary** - Graceful error handling with recovery UI
+
+### 📱 Mobile
+- **Haptic Feedback** - Tactile vibration on mobile devices
+- **Responsive Layout** - Optimized buttons and chip selector for small screens
+- **Touch Optimized** - Larger tap targets with proper spacing
 
 ## 🚀 Quick Start
 
@@ -124,6 +130,7 @@ Or connect your GitHub repo to Vercel for automatic deployments.
 | `party/blackjack.ts` | Game server - state machine, rules engine, timer logic |
 | `src/components/Table.tsx` | Main game UI - seats, dealer, action buttons |
 | `src/components/Seat.tsx` | Player seat - cards, chips, join flow |
+| `src/components/Leaderboard.tsx` | Player rankings modal with trophy icons |
 | `src/hooks/usePartySocket.ts` | WebSocket hook - connection, reconnection, actions |
 | `src/lib/gameTypes.ts` | Shared types - cards, hands, game state |
 
@@ -191,12 +198,15 @@ blackjack_live/
 │   │   ├── Dealer.tsx     # Dealer + shoe
 │   │   ├── Card.tsx       # Playing card
 │   │   ├── Chip.tsx       # Betting chip
-│   │   └── Timer.tsx      # Countdown timer
+│   │   ├── Timer.tsx      # Countdown timer
+│   │   ├── Leaderboard.tsx # Player rankings modal
+│   │   └── ErrorBoundary.tsx # Error handling
 │   ├── hooks/
 │   │   └── usePartySocket.ts  # WebSocket connection
 │   └── lib/
 │       ├── gameTypes.ts   # Type definitions
-│       └── sounds.ts      # Audio manager
+│       ├── sounds.ts      # Audio manager
+│       └── haptics.ts     # Haptic feedback utility
 ├── public/
 │   ├── sounds/            # Audio files
 │   └── dealer-avatar.png  # Dealer image

@@ -130,6 +130,10 @@ export default class BlackjackServer implements Party.Server {
                 this.handleSurrender(sender);
                 break;
 
+            case "request_leaderboard":
+                this.handleRequestLeaderboard(sender);
+                break;
+
             default:
                 this.sendToConnection(sender, { type: "error", message: "Unknown message type" });
         }
@@ -210,6 +214,23 @@ export default class BlackjackServer implements Party.Server {
 
         this.broadcastState();
         this.checkGameState();
+    }
+
+    handleRequestLeaderboard(sender: Party.Connection) {
+        // Return all chip balances from both in-game and persisted storage
+        const allBalances: Record<string, number> = { ...this.state.chipBalances };
+
+        // Also include currently seated players with their live chip counts
+        for (const seat of this.state.seats) {
+            if (seat.playerId && seat.displayName) {
+                allBalances[seat.displayName] = seat.chips;
+            }
+        }
+
+        this.sendToConnection(sender, {
+            type: "leaderboard",
+            balances: allBalances
+        });
     }
 
     async handlePlaceBet(amount: number, sender: Party.Connection) {
