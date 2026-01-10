@@ -1,0 +1,5 @@
+{
+    "name": "blackjack-game",
+    "main": "party/blackjack.ts",
+    "compatibilityDate": "2024-12-01"
+}

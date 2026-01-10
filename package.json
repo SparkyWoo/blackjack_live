@@ -9,18 +9,23 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "framer-motion": "^12.25.0",
+    "howler": "^2.2.4",
     "next": "16.1.1",
+    "partysocket": "^1.1.10",
     "react": "19.2.3",
     "react-dom": "19.2.3"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@types/howler": "^2.2.12",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "babel-plugin-react-compiler": "1.0.0",
     "eslint": "^9",
     "eslint-config-next": "16.1.1",
+    "partykit": "^0.0.115",
     "tailwindcss": "^4",
     "typescript": "^5"
   }
