@@ -6,6 +6,7 @@ import { Dealer, Shoe } from "./Dealer";
 import { Timer } from "./Timer";
 import { Chip, ChipValue } from "./Chip";
 import { motion, AnimatePresence } from "framer-motion";
+import { sounds } from "@/lib/sounds";
 
 interface TableProps {
     gameState: GameState;
@@ -333,7 +334,10 @@ export function Table({
                                                     size="sm"
                                                     selected={false}
                                                     disabled={displayedChips < value}
-                                                    onClick={() => onPlaceBet(value)}
+                                                    onClick={() => {
+                                                        sounds?.play("chipClick");
+                                                        onPlaceBet(value);
+                                                    }}
                                                 />
                                             ))}
                                         </div>

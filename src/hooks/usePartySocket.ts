@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import PartySocket from "partysocket";
 import { GameState, ClientMessage, ServerMessage } from "@/lib/gameTypes";
+import { sounds } from "@/lib/sounds";
 
 const PARTYKIT_HOST = process.env.NEXT_PUBLIC_PARTYKIT_HOST || "localhost:1999";
 
@@ -21,6 +22,7 @@ export function usePartySocket(room: string = "main") {
         amount: number;
         result: 'win' | 'lose' | 'push' | 'blackjack';
     } | null>(null);
+    const prevPhaseRef = useRef<string | null>(null);
 
     useEffect(() => {
         const socket = new PartySocket({
@@ -49,6 +51,11 @@ export function usePartySocket(room: string = "main") {
 
                 switch (msg.type) {
                     case "state_update":
+                        // Play shuffle sound when transitioning to dealing
+                        if (prevPhaseRef.current !== "dealing" && msg.state.phase === "dealing") {
+                            sounds?.play("shuffle");
+                        }
+                        prevPhaseRef.current = msg.state.phase;
                         setGameState(msg.state);
                         break;
                     case "error":
@@ -62,12 +69,23 @@ export function usePartySocket(room: string = "main") {
                             seatIndex: msg.seatIndex,
                         });
                         break;
+                    case "card_dealt":
+                        // Play card deal sound
+                        sounds?.play("cardDeal");
+                        break;
                     case "payout":
                         setLastPayout({
                             seatIndex: msg.seatIndex,
                             amount: msg.amount,
                             result: msg.result,
                         });
+                        // Play win or lose sound
+                        if (msg.result === "win" || msg.result === "blackjack") {
+                            sounds?.play("win");
+                            sounds?.play("chipCollect");
+                        } else if (msg.result === "lose") {
+                            sounds?.play("lose");
+                        }
                         break;
                 }
             } catch (e) {
