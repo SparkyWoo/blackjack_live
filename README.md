@@ -17,22 +17,22 @@
 ## ✨ Features
 
 ### 🎮 Gameplay
-- **6-Player Multiplayer** — Real-time synchronized gameplay
-- **Full Blackjack Rules** — Hit, Stand, Double Down, Split, Surrender, Insurance
-- **Auto-Bet Persistence** — Your last bet carries over between rounds
-- **Spectator Mode** — Watch games in progress
+- **6-Player Multiplayer** - Real-time synchronized gameplay
+- **Full Blackjack Rules** - Hit, Stand, Double Down, Split, Surrender, Insurance
+- **Auto-Bet Persistence** - Your last bet carries over between rounds
+- **Spectator Mode** - Watch games in progress
 
 ### 🎨 Premium UI/UX
-- **Casino-Grade Visuals** — Emerald felt, wooden rails, gold accents
-- **Smooth Animations** — Card dealing, chip stacking, payout effects
-- **Sound Effects** — Immersive audio for all game actions
-- **Mobile Responsive** — Play on any device
+- **Casino-Grade Visuals** - Emerald felt, wooden rails, gold accents
+- **Smooth Animations** - Card dealing, chip stacking, payout effects
+- **Sound Effects** - Immersive audio for all game actions
+- **Mobile Responsive** - Play on any device
 
 ### ⚡ Technical
-- **Edge-Deployed** — Sub-50ms latency via PartyKit's global edge network
-- **Persistent Balances** — Chip balances survive server restarts
-- **Reconnection Handling** — Seamless recovery from network interruptions
-- **TypeScript** — Full type safety throughout
+- **Edge-Deployed** - Sub-50ms latency via PartyKit's global edge network
+- **Persistent Balances** - Chip balances survive server restarts
+- **Reconnection Handling** - Seamless recovery from network interruptions
+- **TypeScript** - Full type safety throughout
 
 ## 🚀 Quick Start
 
@@ -117,11 +117,11 @@ Or connect your GitHub repo to Vercel for automatic deployments.
 
 | File | Description |
 |------|-------------|
-| `party/blackjack.ts` | Game server — state machine, rules engine, timer logic |
-| `src/components/Table.tsx` | Main game UI — seats, dealer, action buttons |
-| `src/components/Seat.tsx` | Player seat — cards, chips, join flow |
-| `src/hooks/usePartySocket.ts` | WebSocket hook — connection, reconnection, actions |
-| `src/lib/gameTypes.ts` | Shared types — cards, hands, game state |
+| `party/blackjack.ts` | Game server - state machine, rules engine, timer logic |
+| `src/components/Table.tsx` | Main game UI - seats, dealer, action buttons |
+| `src/components/Seat.tsx` | Player seat - cards, chips, join flow |
+| `src/hooks/usePartySocket.ts` | WebSocket hook - connection, reconnection, actions |
+| `src/lib/gameTypes.ts` | Shared types - cards, hands, game state |
 
 ## 🎰 Game Rules
 
@@ -209,7 +209,7 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## 📄 License
 
-This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## 🙏 Acknowledgments
 
