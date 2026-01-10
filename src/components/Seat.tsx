@@ -121,47 +121,81 @@ export function Seat({
             className={`flex flex-col items-center gap-2 ${isActivePlayer ? "z-20" : "z-10"}`}
         >
             {/* Cards area */}
-            <div className="min-h-[70px] flex flex-col items-center gap-1.5">
-                {seat.hands.map((hand, handIndex) => (
-                    <motion.div
-                        key={handIndex}
-                        className="relative"
-                        animate={isActivePlayer && handIndex === activeHandIndex ? {
-                            y: [0, -3, 0],
-                        } : {}}
-                        transition={{ duration: 1.5, repeat: Infinity }}
-                    >
-                        {hand.cards.length > 0 && (
-                            <>
-                                <CardStack cards={hand.cards} />
+            <div className="min-h-[70px] flex flex-col items-center gap-2">
+                {seat.hands.map((hand, handIndex) => {
+                    const isThisHandActive = isActivePlayer && handIndex === activeHandIndex;
+                    const hasSplit = seat.hands.length > 1;
 
-                                {/* Hand value badge */}
+                    return (
+                        <motion.div
+                            key={handIndex}
+                            className={`relative ${isThisHandActive ? 'z-20' : 'z-10'}`}
+                            animate={isThisHandActive ? {
+                                y: [0, -4, 0],
+                            } : {}}
+                            transition={{ duration: 1.5, repeat: Infinity }}
+                        >
+                            {/* Split hand indicator */}
+                            {hasSplit && (
                                 <motion.div
-                                    className="absolute -right-3 -top-2"
-                                    initial={{ scale: 0 }}
-                                    animate={{ scale: 1 }}
+                                    initial={{ opacity: 0, x: -10 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    className={`absolute -left-12 top-1/2 -translate-y-1/2 text-[10px] font-bold px-2 py-1 rounded
+                                        ${isThisHandActive
+                                            ? 'bg-amber-400 text-black shadow-lg shadow-amber-400/50'
+                                            : 'bg-white/10 text-white/50'}`}
                                 >
-                                    <span
-                                        className={`text-[11px] font-bold px-2 py-0.5 rounded-full shadow-lg
-                                            ${handValues[handIndex]?.status === "busted"
-                                                ? "bg-gradient-to-r from-red-500 to-red-600 text-white" : ""}
-                                            ${handValues[handIndex]?.status === "blackjack"
-                                                ? "bg-gradient-to-r from-amber-400 to-yellow-500 text-black" : ""}
-                                            ${handValues[handIndex]?.status !== "busted" && handValues[handIndex]?.status !== "blackjack"
-                                                ? "bg-black/80 text-white border border-white/20" : ""}
-                                        `}
-                                    >
-                                        {handValues[handIndex]?.status === "busted"
-                                            ? "BUST"
-                                            : handValues[handIndex]?.status === "blackjack"
-                                                ? "BJ!"
-                                                : handValues[handIndex]?.value}
-                                    </span>
+                                    Hand {handIndex + 1}
                                 </motion.div>
-                            </>
-                        )}
-                    </motion.div>
-                ))}
+                            )}
+
+                            {hand.cards.length > 0 && (
+                                <>
+                                    {/* Active hand glow effect */}
+                                    {isThisHandActive && (
+                                        <motion.div
+                                            className="absolute inset-0 -m-2 rounded-lg"
+                                            animate={{
+                                                boxShadow: [
+                                                    '0 0 10px 2px rgba(251,191,36,0.4)',
+                                                    '0 0 20px 4px rgba(251,191,36,0.6)',
+                                                    '0 0 10px 2px rgba(251,191,36,0.4)',
+                                                ]
+                                            }}
+                                            transition={{ duration: 1.5, repeat: Infinity }}
+                                        />
+                                    )}
+
+                                    <CardStack cards={hand.cards} />
+
+                                    {/* Hand value badge */}
+                                    <motion.div
+                                        className="absolute -right-3 -top-2"
+                                        initial={{ scale: 0 }}
+                                        animate={{ scale: 1 }}
+                                    >
+                                        <span
+                                            className={`text-[11px] font-bold px-2 py-0.5 rounded-full shadow-lg
+                                                ${handValues[handIndex]?.status === "busted"
+                                                    ? "bg-gradient-to-r from-red-500 to-red-600 text-white" : ""}
+                                                ${handValues[handIndex]?.status === "blackjack"
+                                                    ? "bg-gradient-to-r from-amber-400 to-yellow-500 text-black" : ""}
+                                                ${handValues[handIndex]?.status !== "busted" && handValues[handIndex]?.status !== "blackjack"
+                                                    ? "bg-black/80 text-white border border-white/20" : ""}
+                                            `}
+                                        >
+                                            {handValues[handIndex]?.status === "busted"
+                                                ? "BUST"
+                                                : handValues[handIndex]?.status === "blackjack"
+                                                    ? "BJ!"
+                                                    : handValues[handIndex]?.value}
+                                        </span>
+                                    </motion.div>
+                                </>
+                            )}
+                        </motion.div>
+                    );
+                })}
             </div>
 
             {/* Bet display */}

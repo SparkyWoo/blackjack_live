@@ -19,13 +19,26 @@ export function Dealer({ hand, phase }: DealerProps) {
 
     return (
         <div className="flex flex-col items-center gap-3">
-            {/* Dealer label */}
-            <div className="flex items-center gap-2">
-                <div className="h-px w-8 bg-gradient-to-r from-transparent to-amber-500/40" />
-                <span className="text-amber-400/90 text-sm font-bold uppercase tracking-[0.2em]">
-                    Dealer
-                </span>
-                <div className="h-px w-8 bg-gradient-to-l from-transparent to-amber-500/40" />
+            {/* Dealer avatar and label */}
+            <div className="flex items-center gap-3">
+                {/* Avatar */}
+                <div className="relative">
+                    <img
+                        src="/dealer-avatar.png"
+                        alt="Dealer"
+                        className="w-12 h-12 rounded-full border-2 border-amber-500/50 shadow-lg"
+                    />
+                    {/* Online indicator */}
+                    <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-400 rounded-full border-2 border-black/50" />
+                </div>
+
+                {/* Dealer name */}
+                <div className="flex flex-col">
+                    <span className="text-amber-400/90 text-sm font-bold uppercase tracking-wide">
+                        Dealer
+                    </span>
+                    <span className="text-white/40 text-xs">House Rules</span>
+                </div>
             </div>
 
             {/* Cards area */}
