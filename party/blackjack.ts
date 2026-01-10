@@ -570,9 +570,9 @@ export default class BlackjackServer implements Party.Server {
                 seat.hands = [];
                 seat.status = "waiting";
 
-                // Auto-bet the previous bet if they have enough chips
-                if (seat.lastBet > 0 && seat.chips >= seat.lastBet) {
-                    seat.bet = seat.lastBet;
+                // Auto-bet the previous bet, or max chips if not enough
+                if (seat.lastBet > 0 && seat.chips > 0) {
+                    seat.bet = Math.min(seat.lastBet, seat.chips);
                     seat.status = "betting";
                     anyBetsPlaced = true;
                 } else {
