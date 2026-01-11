@@ -13,6 +13,7 @@ import {
     Hand,
     Card,
 } from "../src/lib/gameTypes";
+import { isOptimalAction, Action } from "./basicStrategy";
 
 const INITIAL_CHIPS = 10000;
 const BETTING_TIME = 5000; // 5 seconds - restarts on every bet change
@@ -23,6 +24,7 @@ const DEALING_DELAY = 500; // 500ms after dealing before player turns (reduced f
 
 export default class BlackjackServer implements Party.Server {
     state: GameState;
+    strategyStats: Record<string, { correct: number; total: number }> = {};
     timerCallback: (() => void) | null = null;
     bettingTimerStarted: boolean = false;
 
@@ -35,6 +37,10 @@ export default class BlackjackServer implements Party.Server {
         const storedBalances = await this.room.storage.get<Record<string, number>>("chipBalances");
         if (storedBalances) {
             this.state.chipBalances = storedBalances;
+        }
+        const storedStats = await this.room.storage.get<Record<string, { correct: number; total: number }>>("strategyStats");
+        if (storedStats) {
+            this.strategyStats = storedStats;
         }
     }
 
@@ -227,9 +233,18 @@ export default class BlackjackServer implements Party.Server {
             }
         }
 
+        // Calculate adherence percentages
+        const adherence: Record<string, number> = {};
+        for (const [name, stats] of Object.entries(this.strategyStats)) {
+            if (stats.total > 0) {
+                adherence[name] = Math.round((stats.correct / stats.total) * 100);
+            }
+        }
+
         this.sendToConnection(sender, {
             type: "leaderboard",
-            balances: allBalances
+            balances: allBalances,
+            adherence
         });
     }
 
@@ -294,6 +309,12 @@ export default class BlackjackServer implements Party.Server {
         const hand = seat.hands[this.state.activeHandIndex];
         if (!hand || hand.status !== "playing") return;
 
+        // Track strategy decision before modifying hand
+        const handCanDouble = canDouble(hand) && seat.chips >= hand.bet;
+        const handCanSplit = canSplit(hand) && seat.hands.length < 4 && seat.chips >= hand.bet;
+        const handCanSurrender = hand.cards.length === 2 && !hand.isSplit;
+        this.trackStrategyDecision(seat.displayName, "hit", hand, handCanDouble, handCanSplit, handCanSurrender);
+
         // Deal card
         const card = this.drawCard();
         hand.cards.push(card);
@@ -329,6 +350,12 @@ export default class BlackjackServer implements Party.Server {
         const hand = seat.hands[this.state.activeHandIndex];
         if (!hand || hand.status !== "playing") return;
 
+        // Track strategy decision
+        const handCanDouble = canDouble(hand) && seat.chips >= hand.bet;
+        const handCanSplit = canSplit(hand) && seat.hands.length < 4 && seat.chips >= hand.bet;
+        const handCanSurrender = hand.cards.length === 2 && !hand.isSplit;
+        this.trackStrategyDecision(seat.displayName, "stand", hand, handCanDouble, handCanSplit, handCanSurrender);
+
         hand.status = "standing";
         this.nextPlayerOrHand();
         this.broadcastState();
@@ -349,6 +376,11 @@ export default class BlackjackServer implements Party.Server {
             this.sendToConnection(sender, { type: "error", message: "Cannot surrender now" });
             return;
         }
+
+        // Track strategy decision
+        const handCanDouble = canDouble(hand) && seat.chips >= hand.bet;
+        const handCanSplit = canSplit(hand) && seat.hands.length < 4 && seat.chips >= hand.bet;
+        this.trackStrategyDecision(seat.displayName, "surrender", hand, handCanDouble, handCanSplit, true);
 
         // Return half the bet
         seat.chips += Math.floor(hand.bet / 2);
@@ -373,6 +405,11 @@ export default class BlackjackServer implements Party.Server {
             this.sendToConnection(sender, { type: "error", message: "Not enough chips to double" });
             return;
         }
+
+        // Track strategy decision
+        const handCanSplit = canSplit(hand) && seat.hands.length < 4 && seat.chips >= hand.bet;
+        const handCanSurrender = hand.cards.length === 2 && !hand.isSplit;
+        this.trackStrategyDecision(seat.displayName, "double", hand, true, handCanSplit, handCanSurrender);
 
         // Double the bet - deduct additional chips equal to original bet
         seat.chips -= hand.bet;
@@ -420,6 +457,11 @@ export default class BlackjackServer implements Party.Server {
             this.sendToConnection(sender, { type: "error", message: "Not enough chips to split" });
             return;
         }
+
+        // Track strategy decision
+        const handCanDouble = canDouble(hand) && seat.chips >= hand.bet;
+        const handCanSurrender = hand.cards.length === 2 && !hand.isSplit;
+        this.trackStrategyDecision(seat.displayName, "split", hand, handCanDouble, true, handCanSurrender);
 
         // Deduct chips for new hand
         seat.chips -= hand.bet;
@@ -526,11 +568,20 @@ export default class BlackjackServer implements Party.Server {
             this.state.dealerHand[1].faceUp = true;
             this.broadcastState();
 
-            // Pay out insurance bets (2:1)
-            for (const seat of this.state.seats) {
+            // Pay out insurance bets (2:1) and notify players
+            for (let seatIndex = 0; seatIndex < this.state.seats.length; seatIndex++) {
+                const seat = this.state.seats[seatIndex];
                 if (seat.insuranceBet > 0) {
                     // Insurance pays 2:1, so player gets back bet + 2x bet = 3x
-                    seat.chips += seat.insuranceBet * 3;
+                    const payoutAmount = seat.insuranceBet * 3;
+                    seat.chips += payoutAmount;
+
+                    // Notify the player of insurance win
+                    this.broadcast({
+                        type: "insurance_payout",
+                        seatIndex,
+                        amount: payoutAmount
+                    });
                 }
             }
 
@@ -568,6 +619,41 @@ export default class BlackjackServer implements Party.Server {
         this.state.shoe = createShoe(2);
         this.state.cutCardIndex = Math.floor(this.state.shoe.length * 0.75);
         this.state.needsReshuffle = false;
+    }
+
+    // Track whether player action matches basic strategy
+    trackStrategyDecision(
+        displayName: string,
+        playerAction: Action,
+        hand: Hand,
+        canDoubleHand: boolean,
+        canSplitHand: boolean,
+        canSurrenderHand: boolean
+    ) {
+        const dealerUpcard = this.state.dealerHand[0];
+        if (!dealerUpcard) return;
+
+        const isOptimal = isOptimalAction(
+            playerAction,
+            hand,
+            dealerUpcard,
+            canDoubleHand,
+            canSplitHand,
+            canSurrenderHand
+        );
+
+        if (!this.strategyStats[displayName]) {
+            this.strategyStats[displayName] = { correct: 0, total: 0 };
+        }
+
+        this.strategyStats[displayName].total++;
+        if (isOptimal) {
+            this.strategyStats[displayName].correct++;
+        }
+    }
+
+    async saveStrategyStats() {
+        await this.room.storage.put("strategyStats", this.strategyStats);
     }
 
     async checkGameState() {
@@ -919,8 +1005,9 @@ export default class BlackjackServer implements Party.Server {
             this.state.chipBalances[seat.displayName] = seat.chips;
         }
 
-        // Persist chip balances to durable storage
+        // Persist chip balances and strategy stats to durable storage
         await this.room.storage.put("chipBalances", this.state.chipBalances);
+        await this.saveStrategyStats();
 
         this.state.timerEndTime = Date.now() + PAYOUT_TIME;
         this.broadcastState();

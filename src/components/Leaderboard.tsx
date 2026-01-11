@@ -6,9 +6,10 @@ interface LeaderboardProps {
     isOpen: boolean;
     onClose: () => void;
     balances: Record<string, number>;
+    adherence?: Record<string, number>;
 }
 
-export function Leaderboard({ isOpen, onClose, balances }: LeaderboardProps) {
+export function Leaderboard({ isOpen, onClose, balances, adherence = {} }: LeaderboardProps) {
     // Sort players by chip count (highest first)
     const sortedPlayers = Object.entries(balances)
         .sort(([, a], [, b]) => b - a)
@@ -21,6 +22,13 @@ export function Leaderboard({ isOpen, onClose, balances }: LeaderboardProps) {
             case 2: return "🥉";
             default: return `${rank + 1}`;
         }
+    };
+
+    // Get color class for adherence percentage
+    const getAdherenceColor = (percent: number) => {
+        if (percent >= 90) return "text-emerald-400";
+        if (percent >= 70) return "text-yellow-400";
+        return "text-red-400";
     };
 
     return (
@@ -62,53 +70,75 @@ export function Leaderboard({ isOpen, onClose, balances }: LeaderboardProps) {
                             </button>
                         </div>
 
+                        {/* Column headers */}
+                        <div className="flex items-center px-5 py-2 text-xs text-white/40 border-b border-white/5">
+                            <div className="w-8 text-center">#</div>
+                            <div className="flex-1 min-w-0 px-3">Player</div>
+                            <div className="w-20 text-right">Chips</div>
+                            <div className="w-16 text-right">Strategy</div>
+                        </div>
+
                         {/* Player list */}
-                        <div className="max-h-[60vh] overflow-y-auto p-4 space-y-2">
+                        <div className="max-h-[55vh] overflow-y-auto p-4 space-y-2">
                             {sortedPlayers.length === 0 ? (
                                 <div className="text-center py-8 text-white/50">
                                     No players yet. Be the first to play!
                                 </div>
                             ) : (
-                                sortedPlayers.map(([name, chips], index) => (
-                                    <motion.div
-                                        key={name}
-                                        initial={{ opacity: 0, x: -20 }}
-                                        animate={{ opacity: 1, x: 0 }}
-                                        transition={{ delay: index * 0.05 }}
-                                        className={`flex items-center gap-3 p-3 rounded-xl transition-colors
-                                                    ${index < 3
-                                                ? "bg-gradient-to-r from-amber-500/15 to-transparent border border-amber-500/20"
-                                                : "bg-white/5 hover:bg-white/10"}`}
-                                    >
-                                        {/* Rank */}
-                                        <div className={`w-8 h-8 flex items-center justify-center rounded-full font-bold
-                                                        ${index < 3 ? "text-lg" : "text-sm bg-white/10 text-white/60"}`}>
-                                            {getTrophyIcon(index)}
-                                        </div>
+                                sortedPlayers.map(([name, chips], index) => {
+                                    const playerAdherence = adherence[name];
+                                    return (
+                                        <motion.div
+                                            key={name}
+                                            initial={{ opacity: 0, x: -20 }}
+                                            animate={{ opacity: 1, x: 0 }}
+                                            transition={{ delay: index * 0.05 }}
+                                            className={`flex items-center gap-3 p-3 rounded-xl transition-colors
+                                                        ${index < 3
+                                                    ? "bg-gradient-to-r from-amber-500/15 to-transparent border border-amber-500/20"
+                                                    : "bg-white/5 hover:bg-white/10"}`}
+                                        >
+                                            {/* Rank */}
+                                            <div className={`w-8 h-8 flex items-center justify-center rounded-full font-bold
+                                                            ${index < 3 ? "text-lg" : "text-sm bg-white/10 text-white/60"}`}>
+                                                {getTrophyIcon(index)}
+                                            </div>
 
-                                        {/* Name */}
-                                        <div className="flex-1 min-w-0">
-                                            <span className={`font-medium truncate block
-                                                            ${index === 0 ? "text-amber-400" : "text-white"}`}>
-                                                {name}
-                                            </span>
-                                        </div>
+                                            {/* Name */}
+                                            <div className="flex-1 min-w-0">
+                                                <span className={`font-medium truncate block
+                                                                ${index === 0 ? "text-amber-400" : "text-white"}`}>
+                                                    {name}
+                                                </span>
+                                            </div>
 
-                                        {/* Chips */}
-                                        <div className="flex items-center gap-2">
-                                            <span className="text-emerald-400 font-bold">
-                                                ${chips.toLocaleString()}
-                                            </span>
-                                        </div>
-                                    </motion.div>
-                                ))
+                                            {/* Chips */}
+                                            <div className="w-20 text-right">
+                                                <span className="text-emerald-400 font-bold">
+                                                    ${chips.toLocaleString()}
+                                                </span>
+                                            </div>
+
+                                            {/* Strategy Adherence */}
+                                            <div className="w-16 text-right">
+                                                {playerAdherence !== undefined ? (
+                                                    <span className={`font-medium ${getAdherenceColor(playerAdherence)}`}>
+                                                        {playerAdherence}%
+                                                    </span>
+                                                ) : (
+                                                    <span className="text-white/30">—</span>
+                                                )}
+                                            </div>
+                                        </motion.div>
+                                    );
+                                })
                             )}
                         </div>
 
                         {/* Footer */}
                         <div className="px-5 py-3 border-t border-white/10 bg-black/30">
                             <p className="text-xs text-white/40 text-center">
-                                All chip balances are tracked across sessions
+                                Strategy % shows basic strategy adherence
                             </p>
                         </div>
                     </motion.div>

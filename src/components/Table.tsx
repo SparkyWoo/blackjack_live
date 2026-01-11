@@ -22,7 +22,12 @@ interface TableProps {
         amount: number;
         result: 'win' | 'lose' | 'push' | 'blackjack';
     } | null;
+    lastInsurancePayout: {
+        seatIndex: number;
+        amount: number;
+    } | null;
     leaderboard: Record<string, number> | null;
+    leaderboardAdherence: Record<string, number> | null;
     onJoinSeat: (seatIndex: number, name: string) => void;
     onPlaceBet: (amount: number) => void;
     onClearBet: () => void;
@@ -54,7 +59,9 @@ export function Table({
     gameState,
     playerId,
     lastPayout,
+    lastInsurancePayout,
     leaderboard,
+    leaderboardAdherence,
     onJoinSeat,
     onPlaceBet,
     onClearBet,
@@ -250,6 +257,9 @@ export function Table({
                     </div>
                     <div className="text-amber-400/30 text-sm font-serif mt-2 tracking-widest">
                         DEALER STANDS ON ALL 17s
+                    </div>
+                    <div className="text-amber-400/25 text-xs font-serif mt-1 tracking-widest">
+                        INSURANCE PAYS 2 TO 1
                     </div>
                 </div>
 
@@ -724,6 +734,57 @@ export function Table({
                         </m.div>
                     )}
                 </AnimatePresence>
+
+                {/* Insurance Payout Animation Overlay */}
+                <AnimatePresence>
+                    {lastInsurancePayout && lastInsurancePayout.amount > 0 && (
+                        <m.div
+                            key={`insurance-payout-${lastInsurancePayout.seatIndex}-${lastInsurancePayout.amount}`}
+                            initial={{ opacity: 0, scale: 0.5, y: 50 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.8, y: -30 }}
+                            transition={{ duration: 0.5, ease: "backOut" }}
+                            className="fixed inset-0 flex items-center justify-center pointer-events-none z-50"
+                        >
+                            <m.div
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                className="flex flex-col items-center gap-3 px-8 py-6 rounded-2xl shadow-2xl bg-gradient-to-br from-purple-600 to-purple-400"
+                            >
+                                {/* Shield icon for insurance */}
+                                <m.div
+                                    initial={{ scale: 0 }}
+                                    animate={{ scale: 1 }}
+                                    transition={{ type: "spring", delay: 0.1 }}
+                                    className="text-4xl"
+                                >
+                                    🛡️
+                                </m.div>
+
+                                {/* Result text */}
+                                <m.div
+                                    initial={{ scale: 0 }}
+                                    animate={{ scale: 1 }}
+                                    transition={{ delay: 0.3, type: "spring" }}
+                                    className="text-white text-2xl font-black tracking-wide drop-shadow-lg"
+                                >
+                                    INSURANCE PAYS!
+                                </m.div>
+
+                                {/* Amount */}
+                                <m.div
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: 0.4 }}
+                                    className="text-white/90 text-xl font-bold"
+                                >
+                                    +${lastInsurancePayout.amount.toLocaleString()}
+                                </m.div>
+                            </m.div>
+                        </m.div>
+                    )}
+                </AnimatePresence>
             </div>
 
             {/* Leaderboard Modal */}
@@ -731,6 +792,7 @@ export function Table({
                 isOpen={showLeaderboard}
                 onClose={() => setShowLeaderboard(false)}
                 balances={leaderboard || {}}
+                adherence={leaderboardAdherence || {}}
             />
         </LazyMotion>
     );

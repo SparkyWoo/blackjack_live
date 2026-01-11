@@ -37,7 +37,9 @@ export default function Home() {
     insurance,
     connectionId,
     lastPayout,
+    lastInsurancePayout,
     leaderboard,
+    leaderboardAdherence,
     requestLeaderboard,
   } = usePartySocket("main-table");
 
@@ -78,7 +80,9 @@ export default function Home() {
           gameState={gameState}
           playerId={connectionId}
           lastPayout={lastPayout}
+          lastInsurancePayout={lastInsurancePayout}
           leaderboard={leaderboard}
+          leaderboardAdherence={leaderboardAdherence}
           onJoinSeat={handleJoinSeat}
           onPlaceBet={placeBet}
           onClearBet={clearBet}

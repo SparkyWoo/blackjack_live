@@ -68,7 +68,8 @@ export type ServerMessage =
     | { type: 'player_action'; playerId: string; action: string; seatIndex: number }
     | { type: 'card_dealt'; target: 'player' | 'dealer'; seatIndex?: number; handIndex?: number; card: Card }
     | { type: 'payout'; seatIndex: number; amount: number; result: 'win' | 'lose' | 'push' | 'blackjack' }
-    | { type: 'leaderboard'; balances: Record<string, number> };
+    | { type: 'insurance_payout'; seatIndex: number; amount: number }
+    | { type: 'leaderboard'; balances: Record<string, number>; adherence: Record<string, number> };
 
 // Card utilities
 export function createDeck(): Card[] {

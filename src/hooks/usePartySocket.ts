@@ -23,7 +23,12 @@ export function usePartySocket(room: string = "main") {
         amount: number;
         result: 'win' | 'lose' | 'push' | 'blackjack';
     } | null>(null);
+    const [lastInsurancePayout, setLastInsurancePayout] = useState<{
+        seatIndex: number;
+        amount: number;
+    } | null>(null);
     const [leaderboard, setLeaderboard] = useState<Record<string, number> | null>(null);
+    const [leaderboardAdherence, setLeaderboardAdherence] = useState<Record<string, number> | null>(null);
     const [connectionId, setConnectionId] = useState<string | null>(null);
     const prevPhaseRef = useRef<string | null>(null);
 
@@ -91,8 +96,20 @@ export function usePartySocket(room: string = "main") {
                             sounds?.play("lose");
                         }
                         break;
+                    case "insurance_payout":
+                        setLastInsurancePayout({
+                            seatIndex: msg.seatIndex,
+                            amount: msg.amount
+                        });
+                        // Auto-dismiss after 2 seconds
+                        setTimeout(() => setLastInsurancePayout(null), 2000);
+                        // Play win sound for insurance payout
+                        sounds?.play("win");
+                        sounds?.play("chipCollect");
+                        break;
                     case "leaderboard":
                         setLeaderboard(msg.balances);
+                        setLeaderboardAdherence(msg.adherence);
                         break;
                 }
             } catch (e) {
@@ -166,7 +183,9 @@ export function usePartySocket(room: string = "main") {
         error,
         lastAction,
         lastPayout,
+        lastInsurancePayout,
         leaderboard,
+        leaderboardAdherence,
         joinSeat,
         leaveSeat,
         spectate,
