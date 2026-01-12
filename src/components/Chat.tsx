@@ -25,17 +25,28 @@ export function Chat({ messages, onSendMessage, currentPlayerName }: ChatProps) 
         lastMessageCountRef.current = messages.length;
     }, [messages.length, isExpanded]);
 
-    // Clear unread when expanded
+    // Track if chat was just opened (to use instant scroll vs smooth scroll)
+    const justOpenedRef = useRef(false);
+
+    // Clear unread when expanded and mark as just opened
     useEffect(() => {
         if (isExpanded) {
             setUnreadCount(0);
+            justOpenedRef.current = true;
         }
     }, [isExpanded]);
 
     // Auto-scroll to bottom
     useEffect(() => {
         if (isExpanded) {
-            messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+            // Use instant scroll when first opened, smooth for new messages
+            const behavior = justOpenedRef.current ? "instant" : "smooth";
+            // Small delay to ensure DOM is rendered after opening animation
+            const delay = justOpenedRef.current ? 50 : 0;
+            setTimeout(() => {
+                messagesEndRef.current?.scrollIntoView({ behavior });
+                justOpenedRef.current = false;
+            }, delay);
         }
     }, [messages, isExpanded]);
 
@@ -95,8 +106,8 @@ export function Chat({ messages, onSendMessage, currentPlayerName }: ChatProps) 
                                             <span className="text-amber-400 font-medium">{msg.sender}</span>
                                             <span className="text-white/40 ml-2">{formatTime(msg.timestamp)}</span>
                                             <div className={`mt-0.5 px-2 py-1 rounded-lg inline-block max-w-[200px] ${msg.sender === currentPlayerName
-                                                    ? "bg-emerald-500/20 text-emerald-300"
-                                                    : "bg-white/10 text-white/80"
+                                                ? "bg-emerald-500/20 text-emerald-300"
+                                                : "bg-white/10 text-white/80"
                                                 }`}>
                                                 {msg.message}
                                             </div>

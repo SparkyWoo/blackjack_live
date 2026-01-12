@@ -33,6 +33,7 @@ export function usePartySocket(room: string = "main") {
     const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
     const [connectionId, setConnectionId] = useState<string | null>(null);
     const prevPhaseRef = useRef<string | null>(null);
+    const gameStateRef = useRef<GameState | null>(null);
 
     useEffect(() => {
         const socket = new PartySocket({
@@ -65,6 +66,7 @@ export function usePartySocket(room: string = "main") {
                 switch (msg.type) {
                     case "state_update":
                         prevPhaseRef.current = msg.state.phase;
+                        gameStateRef.current = msg.state;
                         setGameState(msg.state);
                         break;
                     case "error":
@@ -82,33 +84,49 @@ export function usePartySocket(room: string = "main") {
                         // Play card deal sound
                         sounds?.play("cardDeal");
                         break;
-                    case "payout":
-                        setLastPayout({
-                            seatIndex: msg.seatIndex,
-                            amount: msg.amount,
-                            result: msg.result,
-                        });
-                        // Auto-dismiss payout notification after 2 seconds
-                        setTimeout(() => setLastPayout(null), 2000);
-                        // Play win or lose sound
-                        if (msg.result === "win" || msg.result === "blackjack") {
-                            sounds?.play("win");
-                            sounds?.play("chipCollect");
-                        } else if (msg.result === "lose") {
-                            sounds?.play("lose");
+                    case "payout": {
+                        // Find current player's seat index from the latest game state
+                        const currentSeatIndex = gameStateRef.current?.seats.findIndex(s => s.playerId === socket.id) ?? -1;
+                        const isMyPayout = currentSeatIndex !== -1 && msg.seatIndex === currentSeatIndex;
+
+                        // Only show payout animation and play sounds for the current player's own payouts
+                        if (isMyPayout) {
+                            setLastPayout({
+                                seatIndex: msg.seatIndex,
+                                amount: msg.amount,
+                                result: msg.result,
+                            });
+                            // Auto-dismiss payout notification after 2 seconds
+                            setTimeout(() => setLastPayout(null), 2000);
+                            // Play win or lose sound only for own payouts
+                            if (msg.result === "win" || msg.result === "blackjack") {
+                                sounds?.play("win");
+                                sounds?.play("chipCollect");
+                            } else if (msg.result === "lose") {
+                                sounds?.play("lose");
+                            }
                         }
                         break;
-                    case "insurance_payout":
-                        setLastInsurancePayout({
-                            seatIndex: msg.seatIndex,
-                            amount: msg.amount
-                        });
-                        // Auto-dismiss after 2 seconds
-                        setTimeout(() => setLastInsurancePayout(null), 2000);
-                        // Play win sound for insurance payout
-                        sounds?.play("win");
-                        sounds?.play("chipCollect");
+                    }
+                    case "insurance_payout": {
+                        // Find current player's seat index from the latest game state
+                        const currentSeatIdxIns = gameStateRef.current?.seats.findIndex(s => s.playerId === socket.id) ?? -1;
+                        const isMyInsurancePayout = currentSeatIdxIns !== -1 && msg.seatIndex === currentSeatIdxIns;
+
+                        // Only show insurance payout animation and play sounds for the current player
+                        if (isMyInsurancePayout) {
+                            setLastInsurancePayout({
+                                seatIndex: msg.seatIndex,
+                                amount: msg.amount
+                            });
+                            // Auto-dismiss after 2 seconds
+                            setTimeout(() => setLastInsurancePayout(null), 2000);
+                            // Play win sound for insurance payout
+                            sounds?.play("win");
+                            sounds?.play("chipCollect");
+                        }
                         break;
+                    }
                     case "leaderboard":
                         setLeaderboard(msg.balances);
                         setLeaderboardAdherence(msg.adherence);
