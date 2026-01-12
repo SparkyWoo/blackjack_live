@@ -65,6 +65,10 @@ export function usePartySocket(room: string = "main") {
 
                 switch (msg.type) {
                     case "state_update":
+                        // Clear payout when transitioning from payout to betting (new round)
+                        if (prevPhaseRef.current === "payout" && msg.state.phase === "betting") {
+                            setLastPayout(null);
+                        }
                         prevPhaseRef.current = msg.state.phase;
                         gameStateRef.current = msg.state;
                         setGameState(msg.state);
@@ -89,15 +93,23 @@ export function usePartySocket(room: string = "main") {
                         const currentSeatIndex = gameStateRef.current?.seats.findIndex(s => s.playerId === socket.id) ?? -1;
                         const isMyPayout = currentSeatIndex !== -1 && msg.seatIndex === currentSeatIndex;
 
-                        // Only show payout animation and play sounds for the current player's own payouts
+                        // Only process payouts for the current player
                         if (isMyPayout) {
-                            setLastPayout({
-                                seatIndex: msg.seatIndex,
-                                amount: msg.amount,
-                                result: msg.result,
+                            // Accumulate payouts for multi-hand scenarios
+                            setLastPayout(prev => {
+                                // Determine best result (blackjack > win > push > lose)
+                                const resultPriority = { blackjack: 4, win: 3, push: 2, lose: 1 };
+                                const prevPriority = prev ? resultPriority[prev.result] : 0;
+                                const newPriority = resultPriority[msg.result];
+                                const bestResult = newPriority > prevPriority ? msg.result : (prev?.result ?? msg.result);
+
+                                return {
+                                    seatIndex: msg.seatIndex,
+                                    amount: (prev?.amount ?? 0) + msg.amount,
+                                    result: bestResult,
+                                };
                             });
-                            // Auto-dismiss payout notification after 2 seconds
-                            setTimeout(() => setLastPayout(null), 2000);
+
                             // Play win or lose sound only for own payouts
                             if (msg.result === "win" || msg.result === "blackjack") {
                                 sounds?.play("win");
