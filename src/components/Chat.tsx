@@ -41,8 +41,8 @@ export function Chat({ messages, onSendMessage, currentPlayerName }: ChatProps) 
         if (isExpanded) {
             // Use instant scroll when first opened, smooth for new messages
             const behavior = justOpenedRef.current ? "instant" : "smooth";
-            // Small delay to ensure DOM is rendered after opening animation
-            const delay = justOpenedRef.current ? 50 : 0;
+            // Longer delay to ensure animation completes and DOM is fully rendered
+            const delay = justOpenedRef.current ? 150 : 0;
             setTimeout(() => {
                 messagesEndRef.current?.scrollIntoView({ behavior });
                 justOpenedRef.current = false;
