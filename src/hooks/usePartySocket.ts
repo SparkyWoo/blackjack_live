@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef } from "react";
 import PartySocket from "partysocket";
-import { GameState, ClientMessage, ServerMessage } from "@/lib/gameTypes";
+import { GameState, ClientMessage, ServerMessage, ChatMessage } from "@/lib/gameTypes";
 import { sounds } from "@/lib/sounds";
 
 const PARTYKIT_HOST = process.env.NEXT_PUBLIC_PARTYKIT_HOST || "localhost:1999";
@@ -29,6 +29,8 @@ export function usePartySocket(room: string = "main") {
     } | null>(null);
     const [leaderboard, setLeaderboard] = useState<Record<string, number> | null>(null);
     const [leaderboardAdherence, setLeaderboardAdherence] = useState<Record<string, number> | null>(null);
+    const [leaderboardAtmUsage, setLeaderboardAtmUsage] = useState<Record<string, number> | null>(null);
+    const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
     const [connectionId, setConnectionId] = useState<string | null>(null);
     const prevPhaseRef = useRef<string | null>(null);
 
@@ -110,6 +112,17 @@ export function usePartySocket(room: string = "main") {
                     case "leaderboard":
                         setLeaderboard(msg.balances);
                         setLeaderboardAdherence(msg.adherence);
+                        setLeaderboardAtmUsage(msg.atmUsage);
+                        break;
+                    case "chat_broadcast":
+                        setChatMessages(prev => {
+                            const newMessages = [...prev, msg.chatMessage];
+                            // Keep only last 50 messages
+                            if (newMessages.length > 50) {
+                                return newMessages.slice(-50);
+                            }
+                            return newMessages;
+                        });
                         break;
                 }
             } catch (e) {
@@ -176,6 +189,14 @@ export function usePartySocket(room: string = "main") {
         send({ type: "request_leaderboard" });
     }, [send]);
 
+    const sendChat = useCallback((message: string) => {
+        send({ type: "chat_message", message });
+    }, [send]);
+
+    const useAtm = useCallback(() => {
+        send({ type: "use_atm" });
+    }, [send]);
+
     return {
         gameState,
         connected,
@@ -186,6 +207,8 @@ export function usePartySocket(room: string = "main") {
         lastInsurancePayout,
         leaderboard,
         leaderboardAdherence,
+        leaderboardAtmUsage,
+        chatMessages,
         joinSeat,
         leaveSeat,
         spectate,
@@ -198,6 +221,8 @@ export function usePartySocket(room: string = "main") {
         insurance,
         surrender,
         requestLeaderboard,
+        sendChat,
+        useAtm,
         connectionId,
     };
 }

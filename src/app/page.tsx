@@ -40,7 +40,11 @@ export default function Home() {
     lastInsurancePayout,
     leaderboard,
     leaderboardAdherence,
+    leaderboardAtmUsage,
+    chatMessages,
     requestLeaderboard,
+    sendChat,
+    useAtm,
   } = usePartySocket("main-table");
 
   const handleJoinSeat = (seatIndex: number, name: string) => {
@@ -83,6 +87,8 @@ export default function Home() {
           lastInsurancePayout={lastInsurancePayout}
           leaderboard={leaderboard}
           leaderboardAdherence={leaderboardAdherence}
+          leaderboardAtmUsage={leaderboardAtmUsage}
+          chatMessages={chatMessages}
           onJoinSeat={handleJoinSeat}
           onPlaceBet={placeBet}
           onClearBet={clearBet}
@@ -94,6 +100,8 @@ export default function Home() {
           onInsurance={insurance}
           onLeaveSeat={leaveSeat}
           onRequestLeaderboard={requestLeaderboard}
+          onSendChat={sendChat}
+          onUseAtm={useAtm}
         />
       </ErrorBoundary>
       {/* Error toast */}
@@ -111,3 +119,4 @@ export default function Home() {
     </>
   );
 }
+

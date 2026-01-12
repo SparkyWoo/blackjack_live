@@ -3,6 +3,7 @@ import {
     GameState,
     ClientMessage,
     ServerMessage,
+    ChatMessage,
     createInitialGameState,
     createShoe,
     createEmptySeat,
@@ -12,6 +13,7 @@ import {
     canDouble,
     Hand,
     Card,
+    Rank,
 } from "../src/lib/gameTypes";
 import { isOptimalAction, Action } from "./basicStrategy";
 
@@ -25,6 +27,7 @@ const DEALING_DELAY = 500; // 500ms after dealing before player turns (reduced f
 export default class BlackjackServer implements Party.Server {
     state: GameState;
     strategyStats: Record<string, { correct: number; total: number }> = {};
+    atmUsage: Record<string, number> = {};
     timerCallback: (() => void) | null = null;
     bettingTimerStarted: boolean = false;
 
@@ -41,6 +44,10 @@ export default class BlackjackServer implements Party.Server {
         const storedStats = await this.room.storage.get<Record<string, { correct: number; total: number }>>("strategyStats");
         if (storedStats) {
             this.strategyStats = storedStats;
+        }
+        const storedAtmUsage = await this.room.storage.get<Record<string, number>>("atmUsage");
+        if (storedAtmUsage) {
+            this.atmUsage = storedAtmUsage;
         }
     }
 
@@ -67,7 +74,42 @@ export default class BlackjackServer implements Party.Server {
             if (seat?.displayName) {
                 this.state.chipBalances[seat.displayName] = seat.chips;
             }
+
+            // Check if this was the active player during their turn
+            const wasActivePlayer = this.state.phase === "player_turn" && this.state.activePlayerIndex === seatIndex;
+
+            // Mark all their hands as forfeited (busted) so they don't hold up the game
+            for (const hand of seat.hands) {
+                if (hand.status === "playing") {
+                    hand.status = "busted";
+                }
+            }
+
             this.state.seats[seatIndex] = createEmptySeat();
+
+            // If this was the active player, advance to next player
+            if (wasActivePlayer) {
+                this.state.activePlayerIndex = this.findNextActivePlayer(seatIndex);
+                this.state.activeHandIndex = 0;
+
+                if (this.state.activePlayerIndex === -1) {
+                    // All players done, dealer's turn
+                    this.startDealerTurn();
+                } else {
+                    // Find first active hand for new player
+                    const newSeat = this.state.seats[this.state.activePlayerIndex];
+                    for (let i = 0; i < newSeat.hands.length; i++) {
+                        if (newSeat.hands[i].status === "playing") {
+                            this.state.activeHandIndex = i;
+                            break;
+                        }
+                    }
+                    // Restart turn timer for new active player
+                    this.state.timerEndTime = Date.now() + 10000; // TURN_TIME
+                    this.state.timer = 10000;
+                    this.startTimer(10000, () => this.onTurnTimeout());
+                }
+            }
         }
 
         // Remove from spectators
@@ -138,6 +180,14 @@ export default class BlackjackServer implements Party.Server {
 
             case "request_leaderboard":
                 this.handleRequestLeaderboard(sender);
+                break;
+
+            case "chat_message":
+                this.handleChatMessage(msg.message, sender);
+                break;
+
+            case "use_atm":
+                this.handleUseAtm(sender);
                 break;
 
             default:
@@ -244,8 +294,66 @@ export default class BlackjackServer implements Party.Server {
         this.sendToConnection(sender, {
             type: "leaderboard",
             balances: allBalances,
-            adherence
+            adherence,
+            atmUsage: this.atmUsage
         });
+    }
+
+    handleChatMessage(message: string, sender: Party.Connection) {
+        // Find sender name from seat or spectators
+        let senderName = "Anonymous";
+        const seat = this.state.seats.find(s => s.playerId === sender.id);
+        if (seat?.displayName) {
+            senderName = seat.displayName;
+        } else {
+            const spectator = this.state.spectators.find(s => s.id === sender.id);
+            if (spectator) {
+                senderName = spectator.name;
+            }
+        }
+
+        // Create chat message
+        const chatMessage: ChatMessage = {
+            id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+            sender: senderName,
+            message: message.slice(0, 200), // Limit message length
+            timestamp: Date.now()
+        };
+
+        // Add to state (keep last 50 messages)
+        this.state.chatMessages.push(chatMessage);
+        if (this.state.chatMessages.length > 50) {
+            this.state.chatMessages.shift();
+        }
+
+        // Broadcast to all connections
+        this.broadcast({ type: "chat_broadcast", chatMessage });
+    }
+
+    async handleUseAtm(sender: Party.Connection) {
+        const seatIndex = this.state.seats.findIndex(s => s.playerId === sender.id);
+        if (seatIndex === -1) {
+            this.sendToConnection(sender, { type: "error", message: "Must be seated to use ATM" });
+            return;
+        }
+
+        const seat = this.state.seats[seatIndex];
+
+        // Only allow ATM when player has $0
+        if (seat.chips > 0 || seat.bet > 0) {
+            this.sendToConnection(sender, { type: "error", message: "ATM only available when you have $0" });
+            return;
+        }
+
+        // Give $10,000 and track usage
+        seat.chips = INITIAL_CHIPS;
+        if (seat.displayName) {
+            this.atmUsage[seat.displayName] = (this.atmUsage[seat.displayName] || 0) + 1;
+            this.state.chipBalances[seat.displayName] = seat.chips;
+            await this.room.storage.put("atmUsage", this.atmUsage);
+        }
+
+        this.broadcastState();
     }
 
     async handlePlaceBet(amount: number, sender: Party.Connection) {
@@ -607,6 +715,16 @@ export default class BlackjackServer implements Party.Server {
 
         const card = this.state.shoe.pop()!;
 
+        // Update Hi-Lo running count
+        // 2-6 = +1, 7-9 = 0, 10-A = -1
+        const rank = card.rank;
+        if (['2', '3', '4', '5', '6'].includes(rank)) {
+            this.state.runningCount += 1;
+        } else if (['10', 'J', 'Q', 'K', 'A'].includes(rank)) {
+            this.state.runningCount -= 1;
+        }
+        // 7, 8, 9 are neutral (0)
+
         // Check if we've passed the cut card
         if (this.state.shoe.length <= this.state.cutCardIndex) {
             this.state.needsReshuffle = true;
@@ -619,6 +737,7 @@ export default class BlackjackServer implements Party.Server {
         this.state.shoe = createShoe(2);
         this.state.cutCardIndex = Math.floor(this.state.shoe.length * 0.75);
         this.state.needsReshuffle = false;
+        this.state.runningCount = 0; // Reset count on reshuffle
     }
 
     // Track whether player action matches basic strategy

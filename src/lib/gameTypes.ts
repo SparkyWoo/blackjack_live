@@ -29,6 +29,13 @@ export interface Seat {
 
 export type GamePhase = 'waiting' | 'betting' | 'dealing' | 'insurance' | 'player_turn' | 'dealer_turn' | 'payout';
 
+export interface ChatMessage {
+    id: string;
+    sender: string;
+    message: string;
+    timestamp: number;
+}
+
 export interface GameState {
     phase: GamePhase;
     shoe: Card[];
@@ -43,6 +50,8 @@ export interface GameState {
     spectators: { id: string; name: string }[];
     chipBalances: Record<string, number>; // persisted by display name
     lastUpdate: number;
+    runningCount: number; // Hi-Lo running count for card counting
+    chatMessages: ChatMessage[]; // Last 50 chat messages
 }
 
 // Message types from client to server
@@ -59,7 +68,9 @@ export type ClientMessage =
     | { type: 'surrender' }
     | { type: 'insurance'; accept: boolean }  // Accept or decline insurance
     | { type: 'request_state' }
-    | { type: 'request_leaderboard' };
+    | { type: 'request_leaderboard' }
+    | { type: 'chat_message'; message: string }
+    | { type: 'use_atm' };
 
 // Message types from server to client
 export type ServerMessage =
@@ -69,7 +80,8 @@ export type ServerMessage =
     | { type: 'card_dealt'; target: 'player' | 'dealer'; seatIndex?: number; handIndex?: number; card: Card }
     | { type: 'payout'; seatIndex: number; amount: number; result: 'win' | 'lose' | 'push' | 'blackjack' }
     | { type: 'insurance_payout'; seatIndex: number; amount: number }
-    | { type: 'leaderboard'; balances: Record<string, number>; adherence: Record<string, number> };
+    | { type: 'leaderboard'; balances: Record<string, number>; adherence: Record<string, number>; atmUsage: Record<string, number> }
+    | { type: 'chat_broadcast'; chatMessage: ChatMessage };
 
 // Card utilities
 export function createDeck(): Card[] {
@@ -184,6 +196,8 @@ export function createInitialGameState(): GameState {
         timerEndTime: null,
         spectators: [],
         chipBalances: {},
-        lastUpdate: Date.now()
+        lastUpdate: Date.now(),
+        runningCount: 0,
+        chatMessages: []
     };
 }

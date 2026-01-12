@@ -7,9 +7,10 @@ interface LeaderboardProps {
     onClose: () => void;
     balances: Record<string, number>;
     adherence?: Record<string, number>;
+    atmUsage?: Record<string, number>;
 }
 
-export function Leaderboard({ isOpen, onClose, balances, adherence = {} }: LeaderboardProps) {
+export function Leaderboard({ isOpen, onClose, balances, adherence = {}, atmUsage = {} }: LeaderboardProps) {
     // Sort players by chip count (highest first)
     const sortedPlayers = Object.entries(balances)
         .sort(([, a], [, b]) => b - a)
@@ -75,7 +76,8 @@ export function Leaderboard({ isOpen, onClose, balances, adherence = {} }: Leade
                             <div className="w-8 text-center">#</div>
                             <div className="flex-1 min-w-0 px-3">Player</div>
                             <div className="w-20 text-right">Chips</div>
-                            <div className="w-16 text-right">Strategy</div>
+                            <div className="w-14 text-right">Strategy</div>
+                            <div className="w-10 text-right">ATM</div>
                         </div>
 
                         {/* Player list */}
@@ -120,13 +122,24 @@ export function Leaderboard({ isOpen, onClose, balances, adherence = {} }: Leade
                                             </div>
 
                                             {/* Strategy Adherence */}
-                                            <div className="w-16 text-right">
+                                            <div className="w-14 text-right">
                                                 {playerAdherence !== undefined ? (
                                                     <span className={`font-medium ${getAdherenceColor(playerAdherence)}`}>
                                                         {playerAdherence}%
                                                     </span>
                                                 ) : (
                                                     <span className="text-white/30">—</span>
+                                                )}
+                                            </div>
+
+                                            {/* ATM Usage */}
+                                            <div className="w-10 text-right">
+                                                {atmUsage[name] !== undefined && atmUsage[name] > 0 ? (
+                                                    <span className="text-orange-400 font-medium">
+                                                        🏧{atmUsage[name]}
+                                                    </span>
+                                                ) : (
+                                                    <span className="text-emerald-400">⭐</span>
                                                 )}
                                             </div>
                                         </motion.div>

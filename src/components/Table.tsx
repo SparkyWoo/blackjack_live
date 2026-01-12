@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { GameState, canSplit, canDouble } from "@/lib/gameTypes";
+import { GameState, canSplit, canDouble, ChatMessage } from "@/lib/gameTypes";
 import { Seat } from "./Seat";
 import { Dealer, Shoe } from "./Dealer";
 import { Timer } from "./Timer";
@@ -10,6 +10,9 @@ import { LazyMotion, domAnimation, m, AnimatePresence } from "framer-motion";
 import { sounds } from "@/lib/sounds";
 import { haptic } from "@/lib/haptics";
 import { Leaderboard } from "./Leaderboard";
+import { Chat } from "./Chat";
+import { StrategyModal } from "./StrategyModal";
+import { TrueCountModal } from "./TrueCountModal";
 
 // Memoized animation variants for performance
 const pulseAnimation = { opacity: [0.4, 0.8, 0.4] };
@@ -28,6 +31,8 @@ interface TableProps {
     } | null;
     leaderboard: Record<string, number> | null;
     leaderboardAdherence: Record<string, number> | null;
+    leaderboardAtmUsage: Record<string, number> | null;
+    chatMessages: ChatMessage[];
     onJoinSeat: (seatIndex: number, name: string) => void;
     onPlaceBet: (amount: number) => void;
     onClearBet: () => void;
@@ -39,6 +44,8 @@ interface TableProps {
     onInsurance: (accept: boolean) => void;
     onLeaveSeat: () => void;
     onRequestLeaderboard: () => void;
+    onSendChat: (message: string) => void;
+    onUseAtm: () => void;
 }
 
 const BETTING_TIME = 5000;  // 5 seconds - restarts on bet changes
@@ -62,6 +69,8 @@ export function Table({
     lastInsurancePayout,
     leaderboard,
     leaderboardAdherence,
+    leaderboardAtmUsage,
+    chatMessages,
     onJoinSeat,
     onPlaceBet,
     onClearBet,
@@ -73,11 +82,15 @@ export function Table({
     onInsurance,
     onLeaveSeat,
     onRequestLeaderboard,
+    onSendChat,
+    onUseAtm,
 }: TableProps) {
     // Mute toggle state
     const [isMuted, setIsMuted] = useState(false);
     const [showKeyboardHints, setShowKeyboardHints] = useState(false);
     const [showLeaderboard, setShowLeaderboard] = useState(false);
+    const [showStrategyModal, setShowStrategyModal] = useState(false);
+    const [showCountModal, setShowCountModal] = useState(false);
     const prevIsMyTurnRef = useRef(false);
 
     const currentPlayerSeatIndex = gameState.seats.findIndex((s) => s.playerId === playerId);
@@ -287,8 +300,56 @@ export function Table({
                     </div>
 
                     {/* Right side - Shoe, Mute, and Leave */}
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2 sm:gap-3">
                         <Shoe cardsRemaining={gameState.shoe.length} />
+
+                        {/* ATM button - only shows when player has $0 */}
+                        {isInSeat && displayedChips === 0 && currentSeat?.bet === 0 && (
+                            <m.button
+                                initial={{ scale: 0 }}
+                                animate={{ scale: 1 }}
+                                whileHover={{ scale: 1.1 }}
+                                whileTap={{ scale: 0.95 }}
+                                onClick={() => {
+                                    haptic("medium");
+                                    onUseAtm();
+                                }}
+                                aria-label="Use ATM to get chips"
+                                className="px-3 py-1.5 bg-gradient-to-b from-emerald-500 to-emerald-700 hover:from-emerald-400 hover:to-emerald-600
+                                           text-white font-bold text-sm rounded-lg shadow-lg shadow-emerald-500/30 transition-all
+                                           flex items-center gap-1.5"
+                                title="Get $10,000 from ATM"
+                            >
+                                <span>🏧</span>
+                                <span className="hidden sm:inline">ATM</span>
+                            </m.button>
+                        )}
+
+                        {/* Strategy Chart button */}
+                        <button
+                            onClick={() => {
+                                haptic("light");
+                                setShowStrategyModal(true);
+                            }}
+                            aria-label="View basic strategy chart"
+                            className="p-2 text-white/60 hover:text-purple-400 hover:bg-purple-400/10 rounded-lg transition-all"
+                            title="Basic Strategy Chart"
+                        >
+                            <span className="text-lg">📊</span>
+                        </button>
+
+                        {/* Card Count button */}
+                        <button
+                            onClick={() => {
+                                haptic("light");
+                                setShowCountModal(true);
+                            }}
+                            aria-label="View card count"
+                            className="p-2 text-white/60 hover:text-cyan-400 hover:bg-cyan-400/10 rounded-lg transition-all"
+                            title="Card Count (Hi-Lo)"
+                        >
+                            <span className="text-lg">🔢</span>
+                        </button>
 
                         {/* Leaderboard button */}
                         <button
@@ -353,13 +414,13 @@ export function Table({
                     </div>
                 </div>
 
-                {/* Dealer area - top center */}
-                <div className="absolute left-1/2 -translate-x-1/2 top-16">
+                {/* Dealer area - top center, scales with viewport */}
+                <div className="absolute left-1/2 -translate-x-1/2 top-[12vh] sm:top-[14vh] lg:top-[16vh]">
                     <Dealer hand={gameState.dealerHand} phase={gameState.phase} />
                 </div>
 
-                {/* Player seats - arranged in semicircle arc */}
-                <div className="absolute bottom-24 left-1/2 -translate-x-1/2 w-full" style={{ maxWidth: "min(95vw, 950px)" }}>
+                {/* Player seats - arranged in semicircle arc, closer on large screens */}
+                <div className="absolute bottom-20 sm:bottom-24 lg:bottom-[18vh] left-1/2 -translate-x-1/2 w-full" style={{ maxWidth: "min(95vw, 950px)" }}>
                     {gameState.seats.map((seat, index) => {
                         const pos = SEAT_POSITIONS[index];
                         if (!pos) return null; // Guard for TypeScript noUncheckedIndexedAccess
@@ -793,6 +854,28 @@ export function Table({
                 onClose={() => setShowLeaderboard(false)}
                 balances={leaderboard || {}}
                 adherence={leaderboardAdherence || {}}
+                atmUsage={leaderboardAtmUsage || {}}
+            />
+
+            {/* Strategy Modal */}
+            <StrategyModal
+                isOpen={showStrategyModal}
+                onClose={() => setShowStrategyModal(false)}
+            />
+
+            {/* True Count Modal */}
+            <TrueCountModal
+                isOpen={showCountModal}
+                onClose={() => setShowCountModal(false)}
+                runningCount={gameState.runningCount}
+                cardsRemaining={gameState.shoe.length}
+            />
+
+            {/* Chat */}
+            <Chat
+                messages={chatMessages}
+                onSendMessage={onSendChat}
+                currentPlayerName={currentSeat?.displayName || null}
             />
         </LazyMotion>
     );
