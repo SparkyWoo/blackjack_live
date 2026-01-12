@@ -45,57 +45,29 @@ export function ActionToast({ action, playerName }: ActionToastProps) {
             <AnimatePresence>
                 {visible && currentAction && config && (
                     <m.div
-                        initial={{ opacity: 0, y: -50, scale: 0.8 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: -20, scale: 0.9 }}
+                        initial={{ opacity: 0, x: -50 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: -30 }}
                         transition={{ type: "spring", damping: 20, stiffness: 300 }}
-                        className="fixed top-20 left-1/2 -translate-x-1/2 z-50 pointer-events-none"
+                        className="fixed left-4 top-20 z-50 pointer-events-none"
                     >
                         <m.div
-                            className={`flex items-center gap-3 px-5 py-3 rounded-2xl bg-gradient-to-r ${config.color}
-                                        shadow-2xl shadow-black/40 border border-white/20`}
-                            initial={{ rotate: -2 }}
-                            animate={{ rotate: [0, -1, 1, 0] }}
-                            transition={{ duration: 0.3, delay: 0.1 }}
+                            className={`flex items-center gap-2 px-3 py-2 rounded-xl bg-gradient-to-r ${config.color}
+                                        shadow-lg shadow-black/30 border border-white/20`}
                         >
-                            {/* Emoji with pulse */}
-                            <m.span
-                                className="text-2xl"
-                                animate={{ scale: [1, 1.3, 1] }}
-                                transition={{ duration: 0.3 }}
-                            >
-                                {config.emoji}
-                            </m.span>
+                            {/* Emoji */}
+                            <span className="text-lg">{config.emoji}</span>
 
                             {/* Player name and action */}
-                            <div className="flex flex-col">
-                                <span className="text-white/80 text-xs font-medium truncate max-w-[120px]">
+                            <div className="flex items-center gap-1.5">
+                                <span className="text-white/80 text-xs font-medium truncate max-w-[80px]">
                                     {playerName}
                                 </span>
-                                <m.span
-                                    className="text-white font-black text-lg tracking-wide"
-                                    initial={{ x: -10, opacity: 0 }}
-                                    animate={{ x: 0, opacity: 1 }}
-                                    transition={{ delay: 0.1 }}
-                                >
+                                <span className="text-white font-bold text-sm tracking-wide">
                                     {config.label}
-                                </m.span>
-                            </div>
-
-                            {/* Seat indicator */}
-                            <div className="ml-2 w-8 h-8 rounded-full bg-black/20 flex items-center justify-center">
-                                <span className="text-white/90 text-sm font-bold">
-                                    #{currentAction.seatIndex + 1}
                                 </span>
                             </div>
                         </m.div>
-
-                        {/* Subtle glow effect */}
-                        <m.div
-                            className={`absolute inset-0 rounded-2xl bg-gradient-to-r ${config.color} blur-xl opacity-30 -z-10`}
-                            animate={{ opacity: [0.2, 0.4, 0.2] }}
-                            transition={{ duration: 1, repeat: Infinity }}
-                        />
                     </m.div>
                 )}
             </AnimatePresence>
