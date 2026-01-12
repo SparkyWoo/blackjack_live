@@ -13,6 +13,7 @@ import { Leaderboard } from "./Leaderboard";
 import { Chat } from "./Chat";
 import { StrategyModal } from "./StrategyModal";
 import { TrueCountModal } from "./TrueCountModal";
+import { ActionToast } from "./ActionToast";
 
 // Memoized animation variants for performance
 const pulseAnimation = { opacity: [0.4, 0.8, 0.4] };
@@ -33,6 +34,7 @@ interface TableProps {
     leaderboardAdherence: Record<string, number> | null;
     leaderboardAtmUsage: Record<string, number> | null;
     chatMessages: ChatMessage[];
+    lastAction: { playerId: string; action: string; seatIndex: number } | null;
     onJoinSeat: (seatIndex: number, name: string) => void;
     onPlaceBet: (amount: number) => void;
     onClearBet: () => void;
@@ -71,6 +73,7 @@ export function Table({
     leaderboardAdherence,
     leaderboardAtmUsage,
     chatMessages,
+    lastAction,
     onJoinSeat,
     onPlaceBet,
     onClearBet,
@@ -876,6 +879,12 @@ export function Table({
                 messages={chatMessages}
                 onSendMessage={onSendChat}
                 currentPlayerName={currentSeat?.displayName || null}
+            />
+
+            {/* Action Toast - shows player actions to everyone */}
+            <ActionToast
+                action={lastAction}
+                playerName={lastAction ? gameState.seats[lastAction.seatIndex]?.displayName || "Player" : ""}
             />
         </LazyMotion>
     );

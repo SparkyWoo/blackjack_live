@@ -42,6 +42,7 @@ export default function Home() {
     leaderboardAdherence,
     leaderboardAtmUsage,
     chatMessages,
+    lastAction,
     requestLeaderboard,
     sendChat,
     useAtm,
@@ -89,6 +90,7 @@ export default function Home() {
           leaderboardAdherence={leaderboardAdherence}
           leaderboardAtmUsage={leaderboardAtmUsage}
           chatMessages={chatMessages}
+          lastAction={lastAction}
           onJoinSeat={handleJoinSeat}
           onPlaceBet={placeBet}
           onClearBet={clearBet}
