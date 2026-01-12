@@ -610,6 +610,11 @@ export default class BlackjackServer implements Party.Server {
         // Insert new hand after current
         seat.hands.splice(this.state.activeHandIndex + 1, 0, newHand);
 
+        // Reset timer to full 10 seconds for the first split hand
+        this.state.timerEndTime = Date.now() + TURN_TIME;
+        this.state.timer = TURN_TIME;
+        this.startTimer(TURN_TIME, () => this.onTurnTimeout());
+
         this.broadcastState();
     }
 
