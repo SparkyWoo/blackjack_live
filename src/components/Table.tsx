@@ -33,6 +33,7 @@ interface TableProps {
     leaderboard: Record<string, number> | null;
     leaderboardAdherence: Record<string, number> | null;
     leaderboardAtmUsage: Record<string, number> | null;
+    leaderboardBlackjacks: Record<string, number> | null;
     chatMessages: ChatMessage[];
     lastAction: { playerId: string; action: string; seatIndex: number } | null;
     onJoinSeat: (seatIndex: number, name: string) => void;
@@ -72,6 +73,7 @@ export function Table({
     leaderboard,
     leaderboardAdherence,
     leaderboardAtmUsage,
+    leaderboardBlackjacks,
     chatMessages,
     lastAction,
     onJoinSeat,
@@ -389,6 +391,19 @@ export function Table({
                             )}
                         </button>
 
+                        {/* Cocktail button - plays drink sound */}
+                        <button
+                            onClick={() => {
+                                haptic("light");
+                                sounds?.play("drink");
+                            }}
+                            aria-label="Order a drink"
+                            className="p-2 text-white/60 hover:text-pink-400 hover:bg-pink-400/10 rounded-lg transition-all"
+                            title="Order a drink 🍸"
+                        >
+                            <span className="text-lg">🍸</span>
+                        </button>
+
                         {/* Keyboard hints toggle */}
                         <button
                             onClick={() => setShowKeyboardHints(!showKeyboardHints)}
@@ -570,8 +585,9 @@ export function Table({
                                         </>
                                     ) : isMyTurn ? (
                                         <div className="flex flex-col items-center gap-2">
-                                            <div className="flex gap-2 sm:gap-3 flex-wrap justify-center">
-                                                {/* Action buttons with ARIA labels */}
+                                            {/* Fixed-width container to prevent layout shift */}
+                                            <div className="flex gap-2 sm:gap-3 justify-center">
+                                                {/* HIT button - always visible */}
                                                 <m.button
                                                     whileHover={{ scale: 1.05, y: -2 }}
                                                     whileTap={{ scale: 0.95 }}
@@ -586,6 +602,7 @@ export function Table({
                                                     )}
                                                 </m.button>
 
+                                                {/* STAND button - always visible */}
                                                 <m.button
                                                     whileHover={{ scale: 1.05, y: -2 }}
                                                     whileTap={{ scale: 0.95 }}
@@ -600,53 +617,59 @@ export function Table({
                                                     )}
                                                 </m.button>
 
-                                                {canDoubleDown && (
-                                                    <m.button
-                                                        whileHover={{ scale: 1.05, y: -2 }}
-                                                        whileTap={{ scale: 0.95 }}
-                                                        onClick={() => { haptic("light"); onDouble(); }}
-                                                        aria-label="Double down - double your bet and take one card (keyboard: D)"
-                                                        className="px-4 sm:px-6 py-2.5 sm:py-3 bg-gradient-to-b from-purple-500 to-purple-700 hover:from-purple-400 hover:to-purple-600
-                                                           text-white font-bold text-sm sm:text-base rounded-xl shadow-lg shadow-purple-500/30 transition-all relative"
-                                                    >
-                                                        DOUBLE
-                                                        {showKeyboardHints && (
-                                                            <span className="absolute -bottom-5 left-1/2 -translate-x-1/2 text-[10px] text-white/50 font-normal">D</span>
-                                                        )}
-                                                    </m.button>
-                                                )}
+                                                {/* DOUBLE button - uses visibility to maintain layout */}
+                                                <m.button
+                                                    whileHover={canDoubleDown ? { scale: 1.05, y: -2 } : {}}
+                                                    whileTap={canDoubleDown ? { scale: 0.95 } : {}}
+                                                    onClick={() => { if (canDoubleDown) { haptic("light"); onDouble(); } }}
+                                                    aria-label="Double down - double your bet and take one card (keyboard: D)"
+                                                    aria-disabled={!canDoubleDown}
+                                                    className={`px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl shadow-lg transition-all relative
+                                                       ${canDoubleDown
+                                                            ? 'bg-gradient-to-b from-purple-500 to-purple-700 hover:from-purple-400 hover:to-purple-600 text-white font-bold text-sm sm:text-base shadow-purple-500/30 cursor-pointer'
+                                                            : 'bg-gray-700/30 text-gray-600 font-bold text-sm sm:text-base cursor-not-allowed opacity-40'}`}
+                                                >
+                                                    DOUBLE
+                                                    {showKeyboardHints && canDoubleDown && (
+                                                        <span className="absolute -bottom-5 left-1/2 -translate-x-1/2 text-[10px] text-white/50 font-normal">D</span>
+                                                    )}
+                                                </m.button>
 
-                                                {canSplitHand && (
-                                                    <m.button
-                                                        whileHover={{ scale: 1.05, y: -2 }}
-                                                        whileTap={{ scale: 0.95 }}
-                                                        onClick={() => { haptic("light"); onSplit(); }}
-                                                        aria-label="Split - split your pair into two hands (keyboard: P)"
-                                                        className="px-4 sm:px-6 py-2.5 sm:py-3 bg-gradient-to-b from-blue-500 to-blue-700 hover:from-blue-400 hover:to-blue-600
-                                                           text-white font-bold text-sm sm:text-base rounded-xl shadow-lg shadow-blue-500/30 transition-all relative"
-                                                    >
-                                                        SPLIT
-                                                        {showKeyboardHints && (
-                                                            <span className="absolute -bottom-5 left-1/2 -translate-x-1/2 text-[10px] text-white/50 font-normal">P</span>
-                                                        )}
-                                                    </m.button>
-                                                )}
+                                                {/* SPLIT button - uses visibility to maintain layout */}
+                                                <m.button
+                                                    whileHover={canSplitHand ? { scale: 1.05, y: -2 } : {}}
+                                                    whileTap={canSplitHand ? { scale: 0.95 } : {}}
+                                                    onClick={() => { if (canSplitHand) { haptic("light"); onSplit(); } }}
+                                                    aria-label="Split - split your pair into two hands (keyboard: P)"
+                                                    aria-disabled={!canSplitHand}
+                                                    className={`px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl shadow-lg transition-all relative
+                                                       ${canSplitHand
+                                                            ? 'bg-gradient-to-b from-blue-500 to-blue-700 hover:from-blue-400 hover:to-blue-600 text-white font-bold text-sm sm:text-base shadow-blue-500/30 cursor-pointer'
+                                                            : 'bg-gray-700/30 text-gray-600 font-bold text-sm sm:text-base cursor-not-allowed opacity-40'}`}
+                                                >
+                                                    SPLIT
+                                                    {showKeyboardHints && canSplitHand && (
+                                                        <span className="absolute -bottom-5 left-1/2 -translate-x-1/2 text-[10px] text-white/50 font-normal">P</span>
+                                                    )}
+                                                </m.button>
 
-                                                {canSurrenderHand && (
-                                                    <m.button
-                                                        whileHover={{ scale: 1.05, y: -2 }}
-                                                        whileTap={{ scale: 0.95 }}
-                                                        onClick={() => { haptic("light"); onSurrender(); }}
-                                                        aria-label="Surrender - forfeit half your bet (keyboard: R)"
-                                                        className="px-3 sm:px-6 py-2.5 sm:py-3 bg-gradient-to-b from-gray-500 to-gray-700 hover:from-gray-400 hover:to-gray-600
-                                                           text-white font-bold rounded-xl shadow-lg shadow-gray-500/30 transition-all text-xs sm:text-sm relative"
-                                                    >
-                                                        SURRENDER
-                                                        {showKeyboardHints && (
-                                                            <span className="absolute -bottom-5 left-1/2 -translate-x-1/2 text-[10px] text-white/50 font-normal">R</span>
-                                                        )}
-                                                    </m.button>
-                                                )}
+                                                {/* SURRENDER button - uses visibility to maintain layout */}
+                                                <m.button
+                                                    whileHover={canSurrenderHand ? { scale: 1.05, y: -2 } : {}}
+                                                    whileTap={canSurrenderHand ? { scale: 0.95 } : {}}
+                                                    onClick={() => { if (canSurrenderHand) { haptic("light"); onSurrender(); } }}
+                                                    aria-label="Surrender - forfeit half your bet (keyboard: R)"
+                                                    aria-disabled={!canSurrenderHand}
+                                                    className={`px-3 sm:px-6 py-2.5 sm:py-3 rounded-xl shadow-lg transition-all text-xs sm:text-sm relative
+                                                       ${canSurrenderHand
+                                                            ? 'bg-gradient-to-b from-gray-500 to-gray-700 hover:from-gray-400 hover:to-gray-600 text-white font-bold shadow-gray-500/30 cursor-pointer'
+                                                            : 'bg-gray-700/30 text-gray-600 font-bold cursor-not-allowed opacity-40'}`}
+                                                >
+                                                    SURRENDER
+                                                    {showKeyboardHints && canSurrenderHand && (
+                                                        <span className="absolute -bottom-5 left-1/2 -translate-x-1/2 text-[10px] text-white/50 font-normal">R</span>
+                                                    )}
+                                                </m.button>
                                             </div>
                                             {/* Your turn indicator */}
                                             <m.div
@@ -657,7 +680,7 @@ export function Table({
                                                 🎯 Your turn! {showKeyboardHints ? '' : 'Use keyboard shortcuts (H/S/D/P/R)'}
                                             </m.div>
                                         </div>
-                                    ) : gameState.phase === "insurance" && currentSeat && currentSeat.bet > 0 && currentSeat.insuranceBet === 0 ? (
+                                    ) : gameState.phase === "insurance" && currentSeat && currentSeat.bet > 0 && currentSeat.insuranceBet === 0 && currentSeat.chips >= Math.floor(currentSeat.bet / 2) ? (
                                         <div className="flex flex-col items-center gap-3">
                                             <span className="text-amber-400 text-sm font-medium">
                                                 Dealer shows Ace - Insurance? (costs ${Math.floor(currentSeat.bet / 2)})
@@ -862,6 +885,7 @@ export function Table({
                 balances={leaderboard || {}}
                 adherence={leaderboardAdherence || {}}
                 atmUsage={leaderboardAtmUsage || {}}
+                blackjacks={leaderboardBlackjacks || {}}
             />
 
             {/* Strategy Modal */}
@@ -889,6 +913,7 @@ export function Table({
             <ActionToast
                 action={lastAction}
                 playerName={lastAction ? gameState.seats[lastAction.seatIndex]?.displayName || "Player" : ""}
+                gamePhase={gameState.phase}
             />
         </LazyMotion>
     );

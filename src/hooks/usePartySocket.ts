@@ -30,6 +30,7 @@ export function usePartySocket(room: string = "main") {
     const [leaderboard, setLeaderboard] = useState<Record<string, number> | null>(null);
     const [leaderboardAdherence, setLeaderboardAdherence] = useState<Record<string, number> | null>(null);
     const [leaderboardAtmUsage, setLeaderboardAtmUsage] = useState<Record<string, number> | null>(null);
+    const [leaderboardBlackjacks, setLeaderboardBlackjacks] = useState<Record<string, number> | null>(null);
     const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
     const [connectionId, setConnectionId] = useState<string | null>(null);
     const prevPhaseRef = useRef<string | null>(null);
@@ -143,6 +144,7 @@ export function usePartySocket(room: string = "main") {
                         setLeaderboard(msg.balances);
                         setLeaderboardAdherence(msg.adherence);
                         setLeaderboardAtmUsage(msg.atmUsage);
+                        setLeaderboardBlackjacks(msg.blackjackCounts);
                         break;
                     case "chat_broadcast":
                         setChatMessages(prev => {
@@ -238,6 +240,7 @@ export function usePartySocket(room: string = "main") {
         leaderboard,
         leaderboardAdherence,
         leaderboardAtmUsage,
+        leaderboardBlackjacks,
         chatMessages,
         joinSeat,
         leaveSeat,

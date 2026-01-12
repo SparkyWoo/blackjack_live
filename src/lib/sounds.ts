@@ -55,6 +55,11 @@ class SoundManager {
                     volume: 0.6,
                     preload: false,
                 }),
+                drink: new Howl({
+                    src: ["/sounds/drink.mp3"],
+                    volume: 0.7,
+                    preload: false,
+                }),
             };
         }
     }

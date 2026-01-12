@@ -8,9 +8,10 @@ interface LeaderboardProps {
     balances: Record<string, number>;
     adherence?: Record<string, number>;
     atmUsage?: Record<string, number>;
+    blackjacks?: Record<string, number>;
 }
 
-export function Leaderboard({ isOpen, onClose, balances, adherence = {}, atmUsage = {} }: LeaderboardProps) {
+export function Leaderboard({ isOpen, onClose, balances, adherence = {}, atmUsage = {}, blackjacks = {} }: LeaderboardProps) {
     // Sort players by chip count (highest first)
     const sortedPlayers = Object.entries(balances)
         .sort(([, a], [, b]) => b - a)
@@ -76,6 +77,7 @@ export function Leaderboard({ isOpen, onClose, balances, adherence = {}, atmUsag
                             <div className="w-8 text-center">#</div>
                             <div className="flex-1 min-w-0 px-3">Player</div>
                             <div className="w-20 text-right">Chips</div>
+                            <div className="w-12 text-right" title="Blackjacks">BJs</div>
                             <div className="w-14 text-right">Strategy</div>
                             <div className="w-10 text-right">ATM</div>
                         </div>
@@ -119,6 +121,22 @@ export function Leaderboard({ isOpen, onClose, balances, adherence = {}, atmUsag
                                                 <span className="text-emerald-400 font-bold">
                                                     ${chips.toLocaleString()}
                                                 </span>
+                                            </div>
+
+                                            {/* Blackjacks - Silver Dollar Style */}
+                                            <div className="w-12 text-right">
+                                                {(blackjacks[name] ?? 0) > 0 ? (
+                                                    <div className="inline-flex items-center justify-center gap-0.5">
+                                                        <div className="w-5 h-5 rounded-full bg-gradient-to-br from-slate-300 via-slate-100 to-slate-400 
+                                                                       border border-slate-400/50 shadow-sm 
+                                                                       flex items-center justify-center text-[9px] font-bold text-slate-700"
+                                                            title={`${blackjacks[name]} Blackjacks`}>
+                                                            {blackjacks[name]}
+                                                        </div>
+                                                    </div>
+                                                ) : (
+                                                    <span className="text-white/30">—</span>
+                                                )}
                                             </div>
 
                                             {/* Strategy Adherence */}

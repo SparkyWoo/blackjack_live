@@ -105,18 +105,34 @@ export function Card({ card, delay = 0, small = false }: CardProps) {
     );
 }
 
-export function CardStack({ cards }: { cards: CardType[] }) {
+export function CardStack({ cards, isDoubled = false }: { cards: CardType[]; isDoubled?: boolean }) {
     return (
-        <div className="flex" style={{ marginLeft: 0 }}>
-            {cards.map((card, index) => (
-                <div
-                    key={index}
-                    style={{ marginLeft: index === 0 ? 0 : -26 }}
-                    className="relative"
-                >
-                    <Card card={card} delay={index * 0.12} small />
-                </div>
-            ))}
+        <div className="flex items-center" style={{ marginLeft: 0 }}>
+            {cards.map((card, index) => {
+                // The 3rd card (index 2) in a doubled hand is shown sideways
+                const isSidewaysCard = isDoubled && index === 2;
+
+                return (
+                    <div
+                        key={index}
+                        style={{ marginLeft: index === 0 ? 0 : isSidewaysCard ? -18 : -26 }}
+                        className="relative"
+                    >
+                        {isSidewaysCard ? (
+                            <motion.div
+                                initial={{ x: 80, y: -40, rotate: 15, opacity: 0 }}
+                                animate={{ x: 0, y: 0, rotate: 90, opacity: 1 }}
+                                transition={{ duration: 0.35, delay: index * 0.12, ease: "easeOut" }}
+                                style={{ transformOrigin: 'center center' }}
+                            >
+                                <Card card={card} delay={0} small />
+                            </motion.div>
+                        ) : (
+                            <Card card={card} delay={index * 0.12} small />
+                        )}
+                    </div>
+                );
+            })}
         </div>
     );
 }

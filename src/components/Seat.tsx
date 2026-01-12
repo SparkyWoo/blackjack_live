@@ -190,7 +190,7 @@ export function Seat({
                                         />
                                     )}
 
-                                    <CardStack cards={hand.cards} />
+                                    <CardStack cards={hand.cards} isDoubled={hand.isDoubled} />
 
                                     {/* Hand value badge */}
                                     <motion.div
@@ -212,7 +212,9 @@ export function Seat({
                                                 ? "BUST"
                                                 : handValues[handIndex]?.status === "blackjack"
                                                     ? "BJ!"
-                                                    : handValues[handIndex]?.value}
+                                                    : handValues[handIndex]?.isSoft && handValues[handIndex]!.value <= 21
+                                                        ? `${handValues[handIndex]!.value - 10}/${handValues[handIndex]?.value}`
+                                                        : handValues[handIndex]?.value}
                                         </span>
                                     </motion.div>
                                 </>

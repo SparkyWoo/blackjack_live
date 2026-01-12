@@ -80,7 +80,7 @@ export type ServerMessage =
     | { type: 'card_dealt'; target: 'player' | 'dealer'; seatIndex?: number; handIndex?: number; card: Card }
     | { type: 'payout'; seatIndex: number; amount: number; result: 'win' | 'lose' | 'push' | 'blackjack' }
     | { type: 'insurance_payout'; seatIndex: number; amount: number }
-    | { type: 'leaderboard'; balances: Record<string, number>; adherence: Record<string, number>; atmUsage: Record<string, number> }
+    | { type: 'leaderboard'; balances: Record<string, number>; adherence: Record<string, number>; atmUsage: Record<string, number>; blackjackCounts: Record<string, number> }
     | { type: 'chat_broadcast'; chatMessage: ChatMessage };
 
 // Card utilities
@@ -149,8 +149,10 @@ export function calculateHandValue(cards: Card[]): { value: number; isSoft: bool
 
 export function isBlackjack(cards: Card[]): boolean {
     if (cards.length !== 2) return false;
-    const { value } = calculateHandValue(cards);
-    return value === 21;
+    // Check actual card values regardless of faceUp status (needed for dealer blackjack check)
+    const hasAce = cards.some(c => c.rank === 'A');
+    const hasTenValue = cards.some(c => ['10', 'J', 'Q', 'K'].includes(c.rank));
+    return hasAce && hasTenValue;
 }
 
 export function canSplit(hand: Hand): boolean {

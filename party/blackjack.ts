@@ -28,6 +28,7 @@ export default class BlackjackServer implements Party.Server {
     state: GameState;
     strategyStats: Record<string, { correct: number; total: number }> = {};
     atmUsage: Record<string, number> = {};
+    blackjackCounts: Record<string, number> = {};
     timerCallback: (() => void) | null = null;
     bettingTimerStarted: boolean = false;
 
@@ -48,6 +49,10 @@ export default class BlackjackServer implements Party.Server {
         const storedAtmUsage = await this.room.storage.get<Record<string, number>>("atmUsage");
         if (storedAtmUsage) {
             this.atmUsage = storedAtmUsage;
+        }
+        const storedBlackjackCounts = await this.room.storage.get<Record<string, number>>("blackjackCounts");
+        if (storedBlackjackCounts) {
+            this.blackjackCounts = storedBlackjackCounts;
         }
     }
 
@@ -295,7 +300,8 @@ export default class BlackjackServer implements Party.Server {
             type: "leaderboard",
             balances: allBalances,
             adherence,
-            atmUsage: this.atmUsage
+            atmUsage: this.atmUsage,
+            blackjackCounts: this.blackjackCounts
         });
     }
 
@@ -1124,6 +1130,8 @@ export default class BlackjackServer implements Party.Server {
                     // Blackjack pays 3:2
                     payout = hand.bet + Math.floor(hand.bet * 1.5);
                     result = "blackjack";
+                    // Track blackjack count for this player
+                    this.blackjackCounts[seat.displayName] = (this.blackjackCounts[seat.displayName] || 0) + 1;
                 } else if (dealerBlackjack) {
                     // Player loses
                     result = "lose";
@@ -1151,8 +1159,9 @@ export default class BlackjackServer implements Party.Server {
             this.state.chipBalances[seat.displayName] = seat.chips;
         }
 
-        // Persist chip balances and strategy stats to durable storage
+        // Persist chip balances, strategy stats, and blackjack counts to durable storage
         await this.room.storage.put("chipBalances", this.state.chipBalances);
+        await this.room.storage.put("blackjackCounts", this.blackjackCounts);
         await this.saveStrategyStats();
 
         this.state.timerEndTime = Date.now() + PAYOUT_TIME;
