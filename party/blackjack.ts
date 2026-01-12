@@ -446,6 +446,11 @@ export default class BlackjackServer implements Party.Server {
         } else if (value === 21) {
             hand.status = "standing";
             this.nextPlayerOrHand();
+        } else {
+            // Player can continue - reset timer for next action
+            this.state.timerEndTime = Date.now() + TURN_TIME;
+            this.state.timer = TURN_TIME;
+            this.startTimer(TURN_TIME, () => this.onTurnTimeout());
         }
 
         this.broadcastState();
