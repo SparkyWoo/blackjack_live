@@ -1117,7 +1117,9 @@ export default class BlackjackServer implements Party.Server {
                 }
 
                 seat.chips += payout;
-                this.broadcast({ type: "payout", seatIndex, amount: payout, result });
+                // For display purposes, show net gain (payout - original bet for push = 0)
+                const displayAmount = result === "push" ? 0 : (result === "lose" ? 0 : payout - hand.bet);
+                this.broadcast({ type: "payout", seatIndex, amount: displayAmount, result });
             }
 
             // Save updated chip balance to state

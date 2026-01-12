@@ -133,14 +133,12 @@ export function Leaderboard({ isOpen, onClose, balances, adherence = {}, atmUsag
                                             </div>
 
                                             {/* ATM Usage */}
-                                            <div className="w-10 text-right">
-                                                {atmUsage[name] !== undefined && atmUsage[name] > 0 ? (
-                                                    <span className="text-orange-400 font-medium">
-                                                        🏧{atmUsage[name]}
-                                                    </span>
-                                                ) : (
-                                                    <span className="text-emerald-400">⭐</span>
-                                                )}
+                                            <div className="w-10 text-right font-mono text-sm">
+                                                <span className={atmUsage[name] && atmUsage[name] > 0
+                                                    ? "text-orange-400"
+                                                    : "text-white/30"}>
+                                                    {atmUsage[name] || 0}
+                                                </span>
                                             </div>
                                         </motion.div>
                                     );
