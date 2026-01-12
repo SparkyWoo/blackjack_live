@@ -74,12 +74,12 @@ export function Leaderboard({ isOpen, onClose, balances, adherence = {}, atmUsag
 
                         {/* Column headers */}
                         <div className="flex items-center px-5 py-2 text-xs text-white/40 border-b border-white/5">
-                            <div className="w-8 text-center">#</div>
-                            <div className="flex-1 min-w-0 px-3">Player</div>
-                            <div className="w-20 text-right">Chips</div>
-                            <div className="w-12 text-right" title="Blackjacks">BJs</div>
-                            <div className="w-14 text-right">Strategy</div>
-                            <div className="w-10 text-right">ATM</div>
+                            <div className="w-8 text-center shrink-0">#</div>
+                            <div className="flex-1 min-w-0 px-2">Player</div>
+                            <div className="w-20 text-right shrink-0">Chips</div>
+                            <div className="w-10 text-center shrink-0" title="Blackjacks">BJs</div>
+                            <div className="w-12 text-right shrink-0">Strategy</div>
+                            <div className="w-10 text-right shrink-0">ATM</div>
                         </div>
 
                         {/* Player list */}
@@ -97,19 +97,19 @@ export function Leaderboard({ isOpen, onClose, balances, adherence = {}, atmUsag
                                             initial={{ opacity: 0, x: -20 }}
                                             animate={{ opacity: 1, x: 0 }}
                                             transition={{ delay: index * 0.05 }}
-                                            className={`flex items-center gap-3 p-3 rounded-xl transition-colors
+                                            className={`flex items-center p-3 rounded-xl transition-colors
                                                         ${index < 3
                                                     ? "bg-gradient-to-r from-amber-500/15 to-transparent border border-amber-500/20"
                                                     : "bg-white/5 hover:bg-white/10"}`}
                                         >
                                             {/* Rank */}
-                                            <div className={`w-8 h-8 flex items-center justify-center rounded-full font-bold
+                                            <div className={`w-8 h-8 flex items-center justify-center rounded-full font-bold shrink-0
                                                             ${index < 3 ? "text-lg" : "text-sm bg-white/10 text-white/60"}`}>
                                                 {getTrophyIcon(index)}
                                             </div>
 
                                             {/* Name */}
-                                            <div className="flex-1 min-w-0">
+                                            <div className="flex-1 min-w-0 px-2">
                                                 <span className={`font-medium truncate block
                                                                 ${index === 0 ? "text-amber-400" : "text-white"}`}>
                                                     {name}
@@ -117,22 +117,20 @@ export function Leaderboard({ isOpen, onClose, balances, adherence = {}, atmUsag
                                             </div>
 
                                             {/* Chips */}
-                                            <div className="w-20 text-right">
+                                            <div className="w-20 text-right shrink-0">
                                                 <span className="text-emerald-400 font-bold">
                                                     ${chips.toLocaleString()}
                                                 </span>
                                             </div>
 
                                             {/* Blackjacks - Silver Dollar Style */}
-                                            <div className="w-12 text-right">
+                                            <div className="w-10 flex justify-center shrink-0">
                                                 {(blackjacks[name] ?? 0) > 0 ? (
-                                                    <div className="inline-flex items-center justify-center gap-0.5">
-                                                        <div className="w-5 h-5 rounded-full bg-gradient-to-br from-slate-300 via-slate-100 to-slate-400 
-                                                                       border border-slate-400/50 shadow-sm 
-                                                                       flex items-center justify-center text-[9px] font-bold text-slate-700"
-                                                            title={`${blackjacks[name]} Blackjacks`}>
-                                                            {blackjacks[name]}
-                                                        </div>
+                                                    <div className="w-5 h-5 rounded-full bg-gradient-to-br from-slate-300 via-slate-100 to-slate-400 
+                                                                   border border-slate-400/50 shadow-sm 
+                                                                   flex items-center justify-center text-[9px] font-bold text-slate-700"
+                                                        title={`${blackjacks[name]} Blackjacks`}>
+                                                        {blackjacks[name]}
                                                     </div>
                                                 ) : (
                                                     <span className="text-white/30">—</span>
@@ -140,7 +138,7 @@ export function Leaderboard({ isOpen, onClose, balances, adherence = {}, atmUsag
                                             </div>
 
                                             {/* Strategy Adherence */}
-                                            <div className="w-14 text-right">
+                                            <div className="w-12 text-right shrink-0">
                                                 {playerAdherence !== undefined ? (
                                                     <span className={`font-medium ${getAdherenceColor(playerAdherence)}`}>
                                                         {playerAdherence}%
@@ -151,7 +149,7 @@ export function Leaderboard({ isOpen, onClose, balances, adherence = {}, atmUsag
                                             </div>
 
                                             {/* ATM Usage */}
-                                            <div className="w-10 text-right font-mono text-sm">
+                                            <div className="w-10 text-right font-mono text-sm shrink-0">
                                                 <span className={atmUsage[name] && atmUsage[name] > 0
                                                     ? "text-orange-400"
                                                     : "text-white/30"}>
