@@ -36,15 +36,18 @@ export function Chat({ messages, onSendMessage, currentPlayerName }: ChatProps) 
         }
     }, [isExpanded]);
 
+    // Ref for the messages container
+    const messagesContainerRef = useRef<HTMLDivElement>(null);
+
     // Auto-scroll to bottom
     useEffect(() => {
-        if (isExpanded) {
-            // Use instant scroll when first opened, smooth for new messages
-            const behavior = justOpenedRef.current ? "instant" : "smooth";
-            // Longer delay to ensure animation completes and DOM is fully rendered
-            const delay = justOpenedRef.current ? 150 : 0;
+        if (isExpanded && messagesContainerRef.current) {
+            // Use a small delay when first opened to ensure DOM is rendered
+            const delay = justOpenedRef.current ? 100 : 0;
             setTimeout(() => {
-                messagesEndRef.current?.scrollIntoView({ behavior });
+                if (messagesContainerRef.current) {
+                    messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+                }
                 justOpenedRef.current = false;
             }, delay);
         }
@@ -94,7 +97,7 @@ export function Chat({ messages, onSendMessage, currentPlayerName }: ChatProps) 
                             </div>
 
                             {/* Messages */}
-                            <div className="flex-1 overflow-y-auto p-3 space-y-2 scrollbar-hide">
+                            <div ref={messagesContainerRef} className="flex-1 overflow-y-auto p-3 space-y-2 scrollbar-hide">
                                 {messages.length === 0 ? (
                                     <div className="text-white/30 text-xs text-center py-4">No messages yet</div>
                                 ) : (

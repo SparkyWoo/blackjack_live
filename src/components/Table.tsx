@@ -12,7 +12,7 @@ import { haptic } from "@/lib/haptics";
 import { Leaderboard } from "./Leaderboard";
 import { Chat } from "./Chat";
 import { StrategyModal } from "./StrategyModal";
-import { TrueCountModal } from "./TrueCountModal";
+import { TrueCountDisplay } from "./TrueCountDisplay";
 import { ActionToast } from "./ActionToast";
 
 // Memoized animation variants for performance
@@ -502,32 +502,36 @@ export function Table({
                                 <div className="flex items-center gap-4">
                                     {isBetting ? (
                                         <>
-                                            {/* Current bet display */}
-                                            {currentSeat && currentSeat.bet > 0 && (
-                                                <m.div
-                                                    initial={{ scale: 0 }}
-                                                    animate={{ scale: 1 }}
-                                                    className="flex items-center gap-2 px-4 py-2 bg-emerald-500/20 rounded-xl border border-emerald-500/30"
-                                                >
-                                                    <span className="text-emerald-400 font-bold text-lg">
-                                                        ${currentSeat.bet.toLocaleString()}
-                                                    </span>
-                                                    <button
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            onClearBet();
-                                                        }}
-                                                        aria-label="Clear current bet"
-                                                        className="ml-2 text-red-400 hover:text-red-300 text-xs font-medium
-                                                               hover:bg-red-500/20 px-2 py-1 rounded transition-all"
+                                            {/* Current bet display - always reserve space to prevent shifting */}
+                                            <div className="min-w-[100px] flex justify-center">
+                                                {currentSeat && currentSeat.bet > 0 ? (
+                                                    <m.div
+                                                        initial={{ scale: 0 }}
+                                                        animate={{ scale: 1 }}
+                                                        className="flex items-center gap-2 px-4 py-2 bg-emerald-500/20 rounded-xl border border-emerald-500/30"
                                                     >
-                                                        Clear
-                                                    </button>
-                                                </m.div>
-                                            )}
+                                                        <span className="text-emerald-400 font-bold text-lg">
+                                                            ${currentSeat.bet.toLocaleString()}
+                                                        </span>
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                onClearBet();
+                                                            }}
+                                                            aria-label="Clear current bet"
+                                                            className="ml-2 text-red-400 hover:text-red-300 text-xs font-medium
+                                                                   hover:bg-red-500/20 px-2 py-1 rounded transition-all"
+                                                        >
+                                                            Clear
+                                                        </button>
+                                                    </m.div>
+                                                ) : (
+                                                    <div className="px-4 py-2 text-white/30 text-sm">No bet</div>
+                                                )}
+                                            </div>
 
-                                            {/* Chip selection - click to bet directly */}
-                                            <div className="flex gap-1.5 sm:gap-2 overflow-x-auto max-w-[280px] sm:max-w-none pb-1 sm:pb-0 scrollbar-hide">
+                                            {/* Chip selection - improved mobile layout */}
+                                            <div className="flex gap-1 sm:gap-2 flex-wrap justify-center">
                                                 {([10, 50, 100, 500, 1000] as ChipValue[]).map((value) => (
                                                     <Chip
                                                         key={value}
@@ -866,9 +870,9 @@ export function Table({
                 onClose={() => setShowStrategyModal(false)}
             />
 
-            {/* True Count Modal */}
-            <TrueCountModal
-                isOpen={showCountModal}
+            {/* True Count Display - stays visible in corner */}
+            <TrueCountDisplay
+                isVisible={showCountModal}
                 onClose={() => setShowCountModal(false)}
                 runningCount={gameState.runningCount}
                 cardsRemaining={gameState.shoe.length}
