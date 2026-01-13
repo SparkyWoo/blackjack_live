@@ -183,6 +183,12 @@ export function usePartySocket(room: string = "main") {
                             return newMessages;
                         });
                         break;
+                    case "chat_reaction":
+                        // Emit a custom event for reactions that Chat component can listen to
+                        window.dispatchEvent(new CustomEvent("chat_reaction", {
+                            detail: { messageId: msg.messageId, emoji: msg.emoji, sender: msg.sender }
+                        }));
+                        break;
                 }
             } catch (e) {
                 console.error("Failed to parse message:", e);
@@ -252,6 +258,10 @@ export function usePartySocket(room: string = "main") {
         send({ type: "chat_message", message });
     }, [send]);
 
+    const sendReaction = useCallback((messageId: string, emoji: string) => {
+        send({ type: "chat_reaction", messageId, emoji });
+    }, [send]);
+
     const useAtm = useCallback(() => {
         send({ type: "use_atm" });
     }, [send]);
@@ -283,6 +293,7 @@ export function usePartySocket(room: string = "main") {
         surrender,
         requestLeaderboard,
         sendChat,
+        sendReaction,
         useAtm,
         connectionId,
     };

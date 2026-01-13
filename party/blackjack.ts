@@ -24,6 +24,15 @@ const PAYOUT_TIME = 2000; // 2 seconds (reduced from 5 for snappier feel)
 const DEALER_CARD_DELAY = 400; // 400ms between dealer cards (reduced from 800)
 const DEALING_DELAY = 500; // 500ms after dealing before player turns (reduced from 1000)
 
+// Sanitize user input to prevent XSS attacks
+function sanitizeInput(input: string, maxLength: number = 50): string {
+    return input
+        .slice(0, maxLength)
+        .replace(/[<>"'&]/g, '') // Remove HTML special chars
+        .replace(/[\x00-\x1F\x7F]/g, '') // Remove control characters
+        .trim();
+}
+
 export default class BlackjackServer implements Party.Server {
     state: GameState;
     strategyStats: Record<string, { correct: number; total: number }> = {};
@@ -191,6 +200,10 @@ export default class BlackjackServer implements Party.Server {
                 this.handleChatMessage(msg.message, sender);
                 break;
 
+            case "chat_reaction":
+                this.handleChatReaction(msg.messageId, msg.emoji, sender);
+                break;
+
             case "use_atm":
                 this.handleUseAtm(sender);
                 break;
@@ -201,6 +214,13 @@ export default class BlackjackServer implements Party.Server {
     }
 
     handleJoinSeat(seatIndex: number, displayName: string, sender: Party.Connection) {
+        // Sanitize display name
+        const sanitizedName = sanitizeInput(displayName, 12);
+        if (!sanitizedName) {
+            this.sendToConnection(sender, { type: "error", message: "Invalid name" });
+            return;
+        }
+
         if (seatIndex < 0 || seatIndex >= 6) {
             this.sendToConnection(sender, { type: "error", message: "Invalid seat" });
             return;
@@ -223,13 +243,13 @@ export default class BlackjackServer implements Party.Server {
         this.state.spectators = this.state.spectators.filter((s) => s.id !== sender.id);
 
         // Get or create chip balance for this display name
-        const chips = this.state.chipBalances[displayName] ?? INITIAL_CHIPS;
-        this.state.chipBalances[displayName] = chips;
+        const chips = this.state.chipBalances[sanitizedName] ?? INITIAL_CHIPS;
+        this.state.chipBalances[sanitizedName] = chips;
 
         // Assign seat
         this.state.seats[seatIndex] = {
             playerId: sender.id,
-            displayName,
+            displayName: sanitizedName,
             chips,
             bet: 0,
             lastBet: 0,
@@ -258,6 +278,9 @@ export default class BlackjackServer implements Party.Server {
     }
 
     handleSpectate(displayName: string, sender: Party.Connection) {
+        // Sanitize display name
+        const sanitizedName = sanitizeInput(displayName, 12) || "Spectator";
+
         // Remove from any seat first
         const seatIndex = this.state.seats.findIndex((s) => s.playerId === sender.id);
         if (seatIndex !== -1) {
@@ -270,7 +293,7 @@ export default class BlackjackServer implements Party.Server {
 
         // Add to spectators if not already
         if (!this.state.spectators.find((s) => s.id === sender.id)) {
-            this.state.spectators.push({ id: sender.id, name: displayName });
+            this.state.spectators.push({ id: sender.id, name: sanitizedName });
         }
 
         this.broadcastState();
@@ -306,6 +329,10 @@ export default class BlackjackServer implements Party.Server {
     }
 
     handleChatMessage(message: string, sender: Party.Connection) {
+        // Sanitize message content
+        const sanitizedMessage = sanitizeInput(message, 200);
+        if (!sanitizedMessage) return;
+
         // Find sender name from seat or spectators
         let senderName = "Anonymous";
         const seat = this.state.seats.find(s => s.playerId === sender.id);
@@ -322,7 +349,7 @@ export default class BlackjackServer implements Party.Server {
         const chatMessage: ChatMessage = {
             id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
             sender: senderName,
-            message: message.slice(0, 200), // Limit message length
+            message: sanitizedMessage,
             timestamp: Date.now()
         };
 
@@ -334,6 +361,32 @@ export default class BlackjackServer implements Party.Server {
 
         // Broadcast to all connections
         this.broadcast({ type: "chat_broadcast", chatMessage });
+    }
+
+    handleChatReaction(messageId: string, emoji: string, sender: Party.Connection) {
+        // Find sender name
+        let senderName = "Anonymous";
+        const seat = this.state.seats.find(s => s.playerId === sender.id);
+        if (seat?.displayName) {
+            senderName = seat.displayName;
+        } else {
+            const spectator = this.state.spectators.find(s => s.id === sender.id);
+            if (spectator) {
+                senderName = spectator.name;
+            }
+        }
+
+        // Validate emoji (only allow specific reaction emojis)
+        const allowedEmojis = ["👍", "👎", "😂", "🔥", "💰", "🎉"];
+        if (!allowedEmojis.includes(emoji)) return;
+
+        // Broadcast reaction to all
+        this.broadcast({
+            type: "chat_reaction",
+            messageId,
+            emoji,
+            sender: senderName
+        });
     }
 
     async handleUseAtm(sender: Party.Connection) {
