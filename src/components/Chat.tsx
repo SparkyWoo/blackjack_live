@@ -1,21 +1,53 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { LazyMotion, domAnimation, m, AnimatePresence } from "framer-motion";
 import { ChatMessage } from "@/lib/gameTypes";
 
 interface ChatProps {
     messages: ChatMessage[];
     onSendMessage: (message: string) => void;
+    onSendReaction: (messageId: string, emoji: string) => void;
     currentPlayerName: string | null;
 }
 
-export function Chat({ messages, onSendMessage, currentPlayerName }: ChatProps) {
+// Available reaction emojis
+const REACTION_EMOJIS = ["👍", "👎", "😂", "🔥", "💰", "🎉"];
+
+// Reaction type for tracking reactions on messages
+interface Reaction {
+    emoji: string;
+    sender: string;
+}
+
+export function Chat({ messages, onSendMessage, onSendReaction, currentPlayerName }: ChatProps) {
     const [isExpanded, setIsExpanded] = useState(false);
     const [inputValue, setInputValue] = useState("");
     const [unreadCount, setUnreadCount] = useState(0);
+    const [hoveredMessageId, setHoveredMessageId] = useState<string | null>(null);
+    const [messageReactions, setMessageReactions] = useState<Record<string, Reaction[]>>({});
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const lastMessageCountRef = useRef(messages.length);
+
+    // Listen for chat_reaction events from the server
+    useEffect(() => {
+        const handleReaction = (e: CustomEvent<{ messageId: string; emoji: string; sender: string }>) => {
+            const { messageId, emoji, sender } = e.detail;
+            setMessageReactions(prev => {
+                const existing = prev[messageId] || [];
+                // Check if this sender already reacted with this emoji
+                const alreadyReacted = existing.some(r => r.sender === sender && r.emoji === emoji);
+                if (alreadyReacted) return prev;
+                return {
+                    ...prev,
+                    [messageId]: [...existing, { emoji, sender }]
+                };
+            });
+        };
+
+        window.addEventListener("chat_reaction", handleReaction as EventListener);
+        return () => window.removeEventListener("chat_reaction", handleReaction as EventListener);
+    }, []);
 
     // Track unread messages when collapsed
     useEffect(() => {
@@ -53,22 +85,38 @@ export function Chat({ messages, onSendMessage, currentPlayerName }: ChatProps) 
         }
     }, [messages, isExpanded]);
 
-    const handleSend = () => {
+    const handleSend = useCallback(() => {
         if (inputValue.trim()) {
             onSendMessage(inputValue.trim());
             setInputValue("");
         }
-    };
+    }, [inputValue, onSendMessage]);
 
-    const handleKeyDown = (e: React.KeyboardEvent) => {
+    const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
         if (e.key === "Enter" && !e.shiftKey) {
             e.preventDefault();
             handleSend();
         }
-    };
+    }, [handleSend]);
+
+    const handleReaction = useCallback((messageId: string, emoji: string) => {
+        if (currentPlayerName) {
+            onSendReaction(messageId, emoji);
+        }
+    }, [currentPlayerName, onSendReaction]);
 
     const formatTime = (timestamp: number) => {
         return new Date(timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    };
+
+    // Group reactions by emoji for display
+    const getReactionCounts = (messageId: string) => {
+        const reactions = messageReactions[messageId] || [];
+        const counts: Record<string, number> = {};
+        reactions.forEach(r => {
+            counts[r.emoji] = (counts[r.emoji] || 0) + 1;
+        });
+        return counts;
     };
 
     return (
@@ -81,7 +129,7 @@ export function Chat({ messages, onSendMessage, currentPlayerName }: ChatProps) 
                             initial={{ opacity: 0, scale: 0.9, y: 20 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                            className="w-72 h-80 bg-black/90 backdrop-blur-lg rounded-2xl border border-white/10 flex flex-col shadow-2xl"
+                            className="w-80 h-96 bg-black/90 backdrop-blur-lg rounded-2xl border border-white/10 flex flex-col shadow-2xl"
                         >
                             {/* Header */}
                             <div className="flex items-center justify-between px-4 py-2 border-b border-white/10">
@@ -97,25 +145,73 @@ export function Chat({ messages, onSendMessage, currentPlayerName }: ChatProps) 
                             </div>
 
                             {/* Messages */}
-                            <div ref={messagesContainerRef} className="flex-1 overflow-y-auto p-3 space-y-2 scrollbar-hide">
+                            <div ref={messagesContainerRef} className="flex-1 overflow-y-auto p-3 space-y-3 scrollbar-hide">
                                 {messages.length === 0 ? (
                                     <div className="text-white/30 text-xs text-center py-4">No messages yet</div>
                                 ) : (
-                                    messages.map((msg) => (
-                                        <div
-                                            key={msg.id}
-                                            className={`text-xs ${msg.sender === currentPlayerName ? "text-right" : ""}`}
-                                        >
-                                            <span className="text-amber-400 font-medium">{msg.sender}</span>
-                                            <span className="text-white/40 ml-2">{formatTime(msg.timestamp)}</span>
-                                            <div className={`mt-0.5 px-2 py-1 rounded-lg inline-block max-w-[200px] ${msg.sender === currentPlayerName
-                                                ? "bg-emerald-500/20 text-emerald-300"
-                                                : "bg-white/10 text-white/80"
-                                                }`}>
-                                                {msg.message}
+                                    messages.map((msg) => {
+                                        const reactionCounts = getReactionCounts(msg.id);
+                                        const hasReactions = Object.keys(reactionCounts).length > 0;
+
+                                        return (
+                                            <div
+                                                key={msg.id}
+                                                className={`text-xs group relative ${msg.sender === currentPlayerName ? "text-right" : ""}`}
+                                                onMouseEnter={() => setHoveredMessageId(msg.id)}
+                                                onMouseLeave={() => setHoveredMessageId(null)}
+                                            >
+                                                <span className="text-amber-400 font-medium">{msg.sender}</span>
+                                                <span className="text-white/40 ml-2">{formatTime(msg.timestamp)}</span>
+
+                                                <div className="relative inline-block">
+                                                    <div className={`mt-0.5 px-2 py-1 rounded-lg inline-block max-w-[220px] ${msg.sender === currentPlayerName
+                                                        ? "bg-emerald-500/20 text-emerald-300"
+                                                        : "bg-white/10 text-white/80"
+                                                        }`}>
+                                                        {msg.message}
+                                                    </div>
+
+                                                    {/* Reaction picker on hover */}
+                                                    <AnimatePresence>
+                                                        {hoveredMessageId === msg.id && currentPlayerName && (
+                                                            <m.div
+                                                                initial={{ opacity: 0, scale: 0.8, y: 5 }}
+                                                                animate={{ opacity: 1, scale: 1, y: 0 }}
+                                                                exit={{ opacity: 0, scale: 0.8, y: 5 }}
+                                                                className={`absolute top-full mt-1 flex gap-0.5 bg-black/95 border border-white/20 rounded-lg px-1 py-0.5 z-10 ${msg.sender === currentPlayerName ? "right-0" : "left-0"}`}
+                                                            >
+                                                                {REACTION_EMOJIS.map(emoji => (
+                                                                    <button
+                                                                        key={emoji}
+                                                                        onClick={() => handleReaction(msg.id, emoji)}
+                                                                        className="w-6 h-6 flex items-center justify-center hover:bg-white/10 rounded transition-colors text-sm"
+                                                                        title={`React with ${emoji}`}
+                                                                    >
+                                                                        {emoji}
+                                                                    </button>
+                                                                ))}
+                                                            </m.div>
+                                                        )}
+                                                    </AnimatePresence>
+                                                </div>
+
+                                                {/* Reaction display */}
+                                                {hasReactions && (
+                                                    <div className={`flex gap-1 mt-1 flex-wrap ${msg.sender === currentPlayerName ? "justify-end" : "justify-start"}`}>
+                                                        {Object.entries(reactionCounts).map(([emoji, count]) => (
+                                                            <span
+                                                                key={emoji}
+                                                                className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-white/10 rounded-full text-[10px]"
+                                                            >
+                                                                <span>{emoji}</span>
+                                                                {count > 1 && <span className="text-white/60">{count}</span>}
+                                                            </span>
+                                                        ))}
+                                                    </div>
+                                                )}
                                             </div>
-                                        </div>
-                                    ))
+                                        );
+                                    })
                                 )}
                                 <div ref={messagesEndRef} />
                             </div>

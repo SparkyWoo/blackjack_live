@@ -52,6 +52,7 @@ interface TableProps {
     onLeaveSeat: () => void;
     onRequestLeaderboard: () => void;
     onSendChat: (message: string) => void;
+    onSendReaction: (messageId: string, emoji: string) => void;
     onUseAtm: () => void;
 }
 
@@ -93,6 +94,7 @@ export function Table({
     onLeaveSeat,
     onRequestLeaderboard,
     onSendChat,
+    onSendReaction,
     onUseAtm,
 }: TableProps) {
     // Mute toggle state
@@ -913,6 +915,7 @@ export function Table({
             <Chat
                 messages={chatMessages}
                 onSendMessage={onSendChat}
+                onSendReaction={onSendReaction}
                 currentPlayerName={currentSeat?.displayName || null}
             />
 

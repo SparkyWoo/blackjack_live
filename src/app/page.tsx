@@ -47,6 +47,7 @@ export default function Home() {
     lastAction,
     requestLeaderboard,
     sendChat,
+    sendReaction,
     useAtm,
   } = usePartySocket("main-table");
 
@@ -107,6 +108,7 @@ export default function Home() {
           onLeaveSeat={leaveSeat}
           onRequestLeaderboard={requestLeaderboard}
           onSendChat={sendChat}
+          onSendReaction={sendReaction}
           onUseAtm={useAtm}
         />
       </ErrorBoundary>
