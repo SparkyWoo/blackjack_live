@@ -71,6 +71,7 @@ export type ClientMessage =
     | { type: 'request_leaderboard' }
     | { type: 'chat_message'; message: string }
     | { type: 'chat_reaction'; messageId: string; emoji: string }
+    | { type: 'quick_emote'; emoji: string }
     | { type: 'use_atm' };
 
 // Message types from server to client
@@ -83,7 +84,8 @@ export type ServerMessage =
     | { type: 'insurance_payout'; seatIndex: number; amount: number }
     | { type: 'leaderboard'; balances: Record<string, number>; adherence: Record<string, number>; atmUsage: Record<string, number>; blackjackCounts: Record<string, number> }
     | { type: 'chat_broadcast'; chatMessage: ChatMessage }
-    | { type: 'chat_reaction'; messageId: string; emoji: string; sender: string };
+    | { type: 'chat_reaction'; messageId: string; emoji: string; sender: string }
+    | { type: 'quick_emote'; seatIndex: number; emoji: string };
 
 // Card utilities
 export function createDeck(): Card[] {

@@ -10,6 +10,7 @@
     "deploy:partykit": "npx partykit deploy"
   },
   "dependencies": {
+    "canvas-confetti": "^1.9.4",
     "framer-motion": "^12.25.0",
     "howler": "^2.2.4",
     "next": "16.1.1",
@@ -19,6 +20,7 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@types/canvas-confetti": "^1.9.0",
     "@types/howler": "^2.2.12",
     "@types/node": "^20",
     "@types/react": "^19",

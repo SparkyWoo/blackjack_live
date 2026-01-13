@@ -246,6 +246,10 @@ export default class BlackjackServer implements Party.Server {
                 this.handleChatReaction(msg.messageId, msg.emoji, sender);
                 break;
 
+            case "quick_emote":
+                this.handleQuickEmote(msg.emoji, sender);
+                break;
+
             case "use_atm":
                 this.handleUseAtm(sender);
                 break;
@@ -428,6 +432,23 @@ export default class BlackjackServer implements Party.Server {
             messageId,
             emoji,
             sender: senderName
+        });
+    }
+
+    handleQuickEmote(emoji: string, sender: Party.Connection) {
+        // Find sender's seat
+        const seatIndex = this.state.seats.findIndex(s => s.playerId === sender.id);
+        if (seatIndex === -1) return; // Must be seated
+
+        // Validate emoji (only allow specific emotes)
+        const allowedEmotes = ["🎉", "🔥", "😤", "🍀", "👏", "😎", "💪", "🤯"];
+        if (!allowedEmotes.includes(emoji)) return;
+
+        // Broadcast emote to all
+        this.broadcast({
+            type: "quick_emote",
+            seatIndex,
+            emoji
         });
     }
 

@@ -14,6 +14,7 @@ import { Chat } from "./Chat";
 import { StrategyModal } from "./StrategyModal";
 import { TrueCountDisplay } from "./TrueCountDisplay";
 import { ActionToast } from "./ActionToast";
+import { QuickEmoteSelector, FloatingEmotes } from "./QuickEmotes";
 
 // Memoized animation variants for performance
 const pulseAnimation = { opacity: [0.4, 0.8, 0.4] };
@@ -53,6 +54,7 @@ interface TableProps {
     onRequestLeaderboard: () => void;
     onSendChat: (message: string) => void;
     onSendReaction: (messageId: string, emoji: string) => void;
+    onSendQuickEmote: (emoji: string) => void;
     onUseAtm: () => void;
 }
 
@@ -95,6 +97,7 @@ export function Table({
     onRequestLeaderboard,
     onSendChat,
     onSendReaction,
+    onSendQuickEmote,
     onUseAtm,
 }: TableProps) {
     // Mute toggle state
@@ -398,6 +401,12 @@ export function Table({
                             )}
                         </button>
 
+                        {/* Quick Emote selector for seated players */}
+                        <QuickEmoteSelector
+                            onEmote={onSendQuickEmote}
+                            disabled={!isInSeat}
+                        />
+
                         {/* Cocktail button - plays drink sound */}
                         <button
                             onClick={() => {
@@ -459,6 +468,7 @@ export function Table({
                                     transform: `translateX(-50%) rotate(${pos.angle * 0.1}deg)`,
                                 }}
                             >
+                                <FloatingEmotes seatIndex={index} />
                                 <Seat
                                     seat={seat}
                                     seatIndex={index}

@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import PartySocket from "partysocket";
 import { GameState, ClientMessage, ServerMessage, ChatMessage } from "@/lib/gameTypes";
 import { sounds } from "@/lib/sounds";
+import { celebrateWin, celebrateBlackjack } from "@/lib/confetti";
 
 const PARTYKIT_HOST = process.env.NEXT_PUBLIC_PARTYKIT_HOST || "localhost:1999";
 
@@ -142,6 +143,12 @@ export function usePartySocket(room: string = "main") {
                             if (msg.result === "win" || msg.result === "blackjack") {
                                 sounds?.play("win");
                                 sounds?.play("chipCollect");
+                                // Confetti for big wins!
+                                if (msg.amount >= 500) {
+                                    celebrateWin(msg.amount);
+                                } else if (msg.result === "blackjack") {
+                                    celebrateBlackjack();
+                                }
                             } else if (msg.result === "lose") {
                                 sounds?.play("lose");
                             }
@@ -187,6 +194,12 @@ export function usePartySocket(room: string = "main") {
                         // Emit a custom event for reactions that Chat component can listen to
                         window.dispatchEvent(new CustomEvent("chat_reaction", {
                             detail: { messageId: msg.messageId, emoji: msg.emoji, sender: msg.sender }
+                        }));
+                        break;
+                    case "quick_emote":
+                        // Emit a custom event for quick emotes
+                        window.dispatchEvent(new CustomEvent("quick_emote", {
+                            detail: { seatIndex: msg.seatIndex, emoji: msg.emoji }
                         }));
                         break;
                 }
@@ -262,6 +275,10 @@ export function usePartySocket(room: string = "main") {
         send({ type: "chat_reaction", messageId, emoji });
     }, [send]);
 
+    const sendQuickEmote = useCallback((emoji: string) => {
+        send({ type: "quick_emote", emoji });
+    }, [send]);
+
     const useAtm = useCallback(() => {
         send({ type: "use_atm" });
     }, [send]);
@@ -294,6 +311,7 @@ export function usePartySocket(room: string = "main") {
         requestLeaderboard,
         sendChat,
         sendReaction,
+        sendQuickEmote,
         useAtm,
         connectionId,
     };
