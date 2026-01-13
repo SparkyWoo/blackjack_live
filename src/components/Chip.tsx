@@ -153,16 +153,24 @@ function BetDisplayComponent({ amount, compact = false }: BetDisplayProps) {
         return { bg: "#2563eb", ring: "#60a5fa" };
     }, [amount]);
 
-    // Memoize stack chip styles
+    // Calculate number of chip layers based on bet amount
+    const chipCount = useMemo(() => {
+        if (amount >= 1000) return 5;
+        if (amount >= 500) return 4;
+        if (amount >= 100) return 3;
+        return 2;
+    }, [amount]);
+
+    // Memoize stack chip styles with dynamic count
     const chipStackStyles = useMemo(() =>
-        [0, 1, 2].map((i) => ({
+        Array.from({ length: chipCount }, (_, i) => ({
             background: `radial-gradient(circle at 35% 35%, ${colors.ring}, ${colors.bg})`,
             boxShadow: "0 2px 4px rgba(0,0,0,0.3)",
-            top: -i * 2,
-            left: 0,
-            zIndex: 3 - i,
+            top: -i * 3,
+            left: i % 2 === 0 ? 0 : 1,
+            zIndex: chipCount - i,
         })),
-        [colors]
+        [colors, chipCount]
     );
 
     return (
@@ -173,11 +181,14 @@ function BetDisplayComponent({ amount, compact = false }: BetDisplayProps) {
                 transition={betDisplayTransition}
                 className={`flex items-center justify-center ${compact ? "gap-1.5" : "gap-2"}`}
             >
-                {/* Chip stack visual */}
+                {/* Chip stack visual with staggered animation */}
                 <div className="relative">
                     {chipStackStyles.map((style, i) => (
-                        <div
+                        <m.div
                             key={i}
+                            initial={{ scale: 0, y: 20, opacity: 0 }}
+                            animate={{ scale: 1, y: 0, opacity: 1 }}
+                            transition={{ delay: i * 0.05, type: "spring", stiffness: 400 }}
                             className={`${compact ? "w-5 h-5" : "w-7 h-7"} rounded-full absolute`}
                             style={style}
                         />

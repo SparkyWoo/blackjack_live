@@ -60,6 +60,16 @@ class SoundManager {
                     volume: 0.7,
                     preload: false,
                 }),
+                dealerBust: new Howl({
+                    src: ["/sounds/bust.mp3"],
+                    volume: 0.7,
+                    preload: false,
+                }),
+                dealerBlackjack: new Howl({
+                    src: ["/sounds/dealer_blackjack.mp3"],
+                    volume: 0.7,
+                    preload: false,
+                }),
             };
         }
     }

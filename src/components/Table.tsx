@@ -136,6 +136,32 @@ export function Table({
         prevIsMyTurnRef.current = isMyTurn;
     }, [isMyTurn]);
 
+    // Track phase changes for dealer voice lines
+    const prevPhaseRef = useRef(gameState.phase);
+    useEffect(() => {
+        // Play dealer voice lines when entering payout phase
+        if (prevPhaseRef.current === "dealer_turn" && gameState.phase === "payout") {
+            const dealerHand = gameState.dealerHand;
+            if (dealerHand.length > 0) {
+                // Calculate dealer hand value
+                const handValue = dealerHand.reduce((sum, card) => {
+                    if (!card.faceUp) return sum;
+                    if (card.rank === 'A') return sum + 11;
+                    if (['K', 'Q', 'J'].includes(card.rank)) return sum + 10;
+                    return sum + parseInt(card.rank);
+                }, 0);
+
+                // Check for dealer blackjack (2 cards, value 21)
+                if (dealerHand.length === 2 && handValue === 21) {
+                    sounds?.play("dealerBlackjack");
+                } else if (handValue > 21) {
+                    sounds?.play("dealerBust");
+                }
+            }
+        }
+        prevPhaseRef.current = gameState.phase;
+    }, [gameState.phase, gameState.dealerHand]);
+
     // Keyboard shortcuts for game actions
     useEffect(() => {
         if (!isMyTurn) return;
