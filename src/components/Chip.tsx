@@ -38,8 +38,9 @@ const shineStyle = {
 
 function ChipComponent({ value, onClick, disabled = false, selected = false, size = "md" }: ChipProps) {
     const styles = chipStyles[value];
-    const dims = size === "sm" ? "w-11 h-11" : "w-14 h-14";
-    const fontSize = size === "sm" ? "text-[11px]" : "text-sm";
+    // Larger touch targets for mobile - 44px minimum recommended for accessibility
+    const dims = size === "sm" ? "w-12 h-12 min-w-[48px] min-h-[48px]" : "w-16 h-16 min-w-[64px] min-h-[64px]";
+    const fontSize = size === "sm" ? "text-xs" : "text-base";
 
     const handleClick = useCallback(() => {
         if (!disabled && onClick) {

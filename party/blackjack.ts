@@ -33,6 +33,38 @@ function sanitizeInput(input: string, maxLength: number = 50): string {
         .trim();
 }
 
+// Rate limiter to prevent WebSocket spam attacks
+class RateLimiter {
+    private requests: Map<string, number[]> = new Map();
+    private readonly maxRequests: number;
+    private readonly windowMs: number;
+
+    constructor(maxRequests: number = 20, windowMs: number = 5000) {
+        this.maxRequests = maxRequests;
+        this.windowMs = windowMs;
+    }
+
+    isAllowed(connectionId: string): boolean {
+        const now = Date.now();
+        const timestamps = this.requests.get(connectionId) || [];
+
+        // Filter out old timestamps
+        const recentTimestamps = timestamps.filter(t => now - t < this.windowMs);
+
+        if (recentTimestamps.length >= this.maxRequests) {
+            return false; // Rate limit exceeded
+        }
+
+        recentTimestamps.push(now);
+        this.requests.set(connectionId, recentTimestamps);
+        return true;
+    }
+
+    cleanup(connectionId: string): void {
+        this.requests.delete(connectionId);
+    }
+}
+
 export default class BlackjackServer implements Party.Server {
     state: GameState;
     strategyStats: Record<string, { correct: number; total: number }> = {};
@@ -40,6 +72,7 @@ export default class BlackjackServer implements Party.Server {
     blackjackCounts: Record<string, number> = {};
     timerCallback: (() => void) | null = null;
     bettingTimerStarted: boolean = false;
+    rateLimiter: RateLimiter = new RateLimiter(20, 5000); // 20 messages per 5 seconds
 
     constructor(readonly room: Party.Room) {
         this.state = createInitialGameState();
@@ -129,11 +162,20 @@ export default class BlackjackServer implements Party.Server {
         // Remove from spectators
         this.state.spectators = this.state.spectators.filter((s) => s.id !== conn.id);
 
+        // Cleanup rate limiter for this connection
+        this.rateLimiter.cleanup(conn.id);
+
         this.broadcastState();
         this.checkGameState();
     }
 
     onMessage(message: string, sender: Party.Connection) {
+        // Rate limiting check
+        if (!this.rateLimiter.isAllowed(sender.id)) {
+            this.sendToConnection(sender, { type: "error", message: "Too many requests. Please slow down." });
+            return;
+        }
+
         try {
             const msg: ClientMessage = JSON.parse(message);
             this.handleMessage(msg, sender);
