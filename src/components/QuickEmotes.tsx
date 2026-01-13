@@ -32,9 +32,12 @@ export function QuickEmoteSelector({ onEmote, disabled }: QuickEmoteSelectorProp
 
     return (
         <LazyMotion features={domAnimation}>
-            <div className="relative">
+            <div className="relative z-50">
                 <button
-                    onClick={() => setIsOpen(!isOpen)}
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        setIsOpen(!isOpen);
+                    }}
                     className="w-10 h-10 rounded-full bg-black/60 border border-white/20 
                                hover:border-amber-400/50 hover:bg-black/80 transition-all
                                flex items-center justify-center text-lg shadow-lg"
@@ -45,25 +48,36 @@ export function QuickEmoteSelector({ onEmote, disabled }: QuickEmoteSelectorProp
 
                 <AnimatePresence>
                     {isOpen && (
-                        <m.div
-                            initial={{ opacity: 0, scale: 0.8, y: 10 }}
-                            animate={{ opacity: 1, scale: 1, y: 0 }}
-                            exit={{ opacity: 0, scale: 0.8, y: 10 }}
-                            className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 
-                                       flex gap-1 bg-black/95 border border-white/20 
-                                       rounded-xl px-2 py-1.5 shadow-xl z-50"
-                        >
-                            {QUICK_EMOTES.map(emoji => (
-                                <button
-                                    key={emoji}
-                                    onClick={() => handleEmote(emoji)}
-                                    className="w-8 h-8 flex items-center justify-center 
-                                               hover:bg-white/10 rounded-lg transition-colors text-lg"
-                                >
-                                    {emoji}
-                                </button>
-                            ))}
-                        </m.div>
+                        <>
+                            {/* Backdrop to close picker when clicking outside */}
+                            <div
+                                className="fixed inset-0 z-40"
+                                onClick={() => setIsOpen(false)}
+                            />
+                            <m.div
+                                initial={{ opacity: 0, scale: 0.8, y: -10 }}
+                                animate={{ opacity: 1, scale: 1, y: 0 }}
+                                exit={{ opacity: 0, scale: 0.8, y: -10 }}
+                                className="absolute top-full mt-2 left-1/2 -translate-x-1/2 
+                                           flex gap-1 bg-black/95 border border-white/20 
+                                           rounded-xl px-2 py-1.5 shadow-xl z-50"
+                            >
+                                {QUICK_EMOTES.map(emoji => (
+                                    <button
+                                        key={emoji}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleEmote(emoji);
+                                        }}
+                                        className="w-8 h-8 flex items-center justify-center 
+                                                   hover:bg-white/10 rounded-lg transition-colors text-lg
+                                                   active:scale-90"
+                                    >
+                                        {emoji}
+                                    </button>
+                                ))}
+                            </m.div>
+                        </>
                     )}
                 </AnimatePresence>
             </div>
