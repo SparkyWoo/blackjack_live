@@ -37,6 +37,7 @@ export default function Home() {
     insurance,
     connectionId,
     lastPayout,
+    seatPayouts,
     lastInsurancePayout,
     leaderboard,
     leaderboardAdherence,
@@ -86,6 +87,7 @@ export default function Home() {
           gameState={gameState}
           playerId={connectionId}
           lastPayout={lastPayout}
+          seatPayouts={seatPayouts}
           lastInsurancePayout={lastInsurancePayout}
           leaderboard={leaderboard}
           leaderboardAdherence={leaderboardAdherence}

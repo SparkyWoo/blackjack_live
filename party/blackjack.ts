@@ -427,10 +427,10 @@ export default class BlackjackServer implements Party.Server {
         const handCanDouble = canDouble(hand) && seat.chips >= hand.bet;
         const handCanSplit = canSplit(hand) && seat.hands.length < 4 && seat.chips >= hand.bet;
         const handCanSurrender = hand.cards.length === 2 && !hand.isSplit;
-        this.trackStrategyDecision(seat.displayName, "hit", hand, handCanDouble, handCanSplit, handCanSurrender);
+        const isOptimal = this.trackStrategyDecision(seat.displayName, "hit", hand, handCanDouble, handCanSplit, handCanSurrender);
 
         // Broadcast action to all players
-        this.broadcast({ type: "player_action", playerId: sender.id, action: "hit", seatIndex });
+        this.broadcast({ type: "player_action", playerId: sender.id, action: "hit", seatIndex, isOptimal });
 
         // Deal card
         const card = this.drawCard();
@@ -476,10 +476,10 @@ export default class BlackjackServer implements Party.Server {
         const handCanDouble = canDouble(hand) && seat.chips >= hand.bet;
         const handCanSplit = canSplit(hand) && seat.hands.length < 4 && seat.chips >= hand.bet;
         const handCanSurrender = hand.cards.length === 2 && !hand.isSplit;
-        this.trackStrategyDecision(seat.displayName, "stand", hand, handCanDouble, handCanSplit, handCanSurrender);
+        const isOptimal = this.trackStrategyDecision(seat.displayName, "stand", hand, handCanDouble, handCanSplit, handCanSurrender);
 
         // Broadcast action to all players
-        this.broadcast({ type: "player_action", playerId: sender.id, action: "stand", seatIndex });
+        this.broadcast({ type: "player_action", playerId: sender.id, action: "stand", seatIndex, isOptimal });
 
         hand.status = "standing";
         this.nextPlayerOrHand();
@@ -505,10 +505,10 @@ export default class BlackjackServer implements Party.Server {
         // Track strategy decision
         const handCanDouble = canDouble(hand) && seat.chips >= hand.bet;
         const handCanSplit = canSplit(hand) && seat.hands.length < 4 && seat.chips >= hand.bet;
-        this.trackStrategyDecision(seat.displayName, "surrender", hand, handCanDouble, handCanSplit, true);
+        const isOptimal = this.trackStrategyDecision(seat.displayName, "surrender", hand, handCanDouble, true, true);
 
         // Broadcast action to all players
-        this.broadcast({ type: "player_action", playerId: sender.id, action: "surrender", seatIndex });
+        this.broadcast({ type: "player_action", playerId: sender.id, action: "surrender", seatIndex, isOptimal });
 
         // Return half the bet
         seat.chips += Math.floor(hand.bet / 2);
@@ -537,10 +537,10 @@ export default class BlackjackServer implements Party.Server {
         // Track strategy decision
         const handCanSplit = canSplit(hand) && seat.hands.length < 4 && seat.chips >= hand.bet;
         const handCanSurrender = hand.cards.length === 2 && !hand.isSplit;
-        this.trackStrategyDecision(seat.displayName, "double", hand, true, handCanSplit, handCanSurrender);
+        const isOptimal = this.trackStrategyDecision(seat.displayName, "double", hand, true, handCanSplit, handCanSurrender);
 
         // Broadcast action to all players
-        this.broadcast({ type: "player_action", playerId: sender.id, action: "double", seatIndex });
+        this.broadcast({ type: "player_action", playerId: sender.id, action: "double", seatIndex, isOptimal });
 
         // Double the bet - deduct additional chips equal to original bet
         seat.chips -= hand.bet;
@@ -592,10 +592,10 @@ export default class BlackjackServer implements Party.Server {
         // Track strategy decision
         const handCanDouble = canDouble(hand) && seat.chips >= hand.bet;
         const handCanSurrender = hand.cards.length === 2 && !hand.isSplit;
-        this.trackStrategyDecision(seat.displayName, "split", hand, handCanDouble, true, handCanSurrender);
+        const isOptimal = this.trackStrategyDecision(seat.displayName, "split", hand, handCanDouble, true, handCanSurrender);
 
         // Broadcast action to all players
-        this.broadcast({ type: "player_action", playerId: sender.id, action: "split", seatIndex });
+        this.broadcast({ type: "player_action", playerId: sender.id, action: "split", seatIndex, isOptimal });
 
         // Deduct chips for new hand
         seat.chips -= hand.bet;
@@ -771,7 +771,7 @@ export default class BlackjackServer implements Party.Server {
         this.state.runningCount = 0; // Reset count on reshuffle
     }
 
-    // Track whether player action matches basic strategy
+    // Track whether player action matches basic strategy - returns isOptimal
     trackStrategyDecision(
         displayName: string,
         playerAction: Action,
@@ -779,9 +779,9 @@ export default class BlackjackServer implements Party.Server {
         canDoubleHand: boolean,
         canSplitHand: boolean,
         canSurrenderHand: boolean
-    ) {
+    ): boolean {
         const dealerUpcard = this.state.dealerHand[0];
-        if (!dealerUpcard) return;
+        if (!dealerUpcard) return true;
 
         const isOptimal = isOptimalAction(
             playerAction,
@@ -800,6 +800,8 @@ export default class BlackjackServer implements Party.Server {
         if (isOptimal) {
             this.strategyStats[displayName].correct++;
         }
+
+        return isOptimal;
     }
 
     async saveStrategyStats() {

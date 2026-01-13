@@ -17,12 +17,18 @@ export function usePartySocket(room: string = "main") {
         playerId: string;
         action: string;
         seatIndex: number;
+        isOptimal?: boolean;
     } | null>(null);
     const [lastPayout, setLastPayout] = useState<{
         seatIndex: number;
         amount: number;
         result: 'win' | 'lose' | 'push' | 'blackjack';
     } | null>(null);
+    // Track payouts per seat for displaying outcomes above cards
+    const [seatPayouts, setSeatPayouts] = useState<Record<number, {
+        amount: number;
+        result: 'win' | 'lose' | 'push' | 'blackjack';
+    }>>({});
     const [lastInsurancePayout, setLastInsurancePayout] = useState<{
         seatIndex: number;
         amount: number;
@@ -66,9 +72,14 @@ export function usePartySocket(room: string = "main") {
 
                 switch (msg.type) {
                     case "state_update":
-                        // Clear payout when transitioning from payout to betting (new round)
+                        // Clear payouts when transitioning from payout to betting (new round)
                         if (prevPhaseRef.current === "payout" && msg.state.phase === "betting") {
                             setLastPayout(null);
+                            setSeatPayouts({});
+                        }
+                        // Clear seat payouts when starting dealing phase
+                        if (prevPhaseRef.current !== "dealing" && msg.state.phase === "dealing") {
+                            setSeatPayouts({});
                         }
                         prevPhaseRef.current = msg.state.phase;
                         gameStateRef.current = msg.state;
@@ -83,6 +94,7 @@ export function usePartySocket(room: string = "main") {
                             playerId: msg.playerId,
                             action: msg.action,
                             seatIndex: msg.seatIndex,
+                            isOptimal: msg.isOptimal,
                         });
                         break;
                     case "card_dealt":
@@ -90,11 +102,26 @@ export function usePartySocket(room: string = "main") {
                         sounds?.play("cardDeal");
                         break;
                     case "payout": {
+                        // Track payouts per seat for showing outcomes above cards
+                        setSeatPayouts(prev => ({
+                            ...prev,
+                            [msg.seatIndex]: {
+                                amount: (prev[msg.seatIndex]?.amount ?? 0) + msg.amount,
+                                result: (() => {
+                                    // Determine best result (blackjack > win > push > lose)
+                                    const resultPriority = { blackjack: 4, win: 3, push: 2, lose: 1 };
+                                    const prevPriority = prev[msg.seatIndex] ? resultPriority[prev[msg.seatIndex].result] : 0;
+                                    const newPriority = resultPriority[msg.result];
+                                    return newPriority > prevPriority ? msg.result : (prev[msg.seatIndex]?.result ?? msg.result);
+                                })(),
+                            }
+                        }));
+
                         // Find current player's seat index from the latest game state
                         const currentSeatIndex = gameStateRef.current?.seats.findIndex(s => s.playerId === socket.id) ?? -1;
                         const isMyPayout = currentSeatIndex !== -1 && msg.seatIndex === currentSeatIndex;
 
-                        // Only process payouts for the current player
+                        // Only process sounds and lastPayout for the current player
                         if (isMyPayout) {
                             // Accumulate payouts for multi-hand scenarios
                             setLastPayout(prev => {
@@ -236,6 +263,7 @@ export function usePartySocket(room: string = "main") {
         error,
         lastAction,
         lastPayout,
+        seatPayouts,
         lastInsurancePayout,
         leaderboard,
         leaderboardAdherence,

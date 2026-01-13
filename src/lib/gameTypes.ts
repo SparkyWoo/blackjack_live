@@ -76,7 +76,7 @@ export type ClientMessage =
 export type ServerMessage =
     | { type: 'state_update'; state: GameState }
     | { type: 'error'; message: string }
-    | { type: 'player_action'; playerId: string; action: string; seatIndex: number }
+    | { type: 'player_action'; playerId: string; action: string; seatIndex: number; isOptimal?: boolean }
     | { type: 'card_dealt'; target: 'player' | 'dealer'; seatIndex?: number; handIndex?: number; card: Card }
     | { type: 'payout'; seatIndex: number; amount: number; result: 'win' | 'lose' | 'push' | 'blackjack' }
     | { type: 'insurance_payout'; seatIndex: number; amount: number }

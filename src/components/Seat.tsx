@@ -12,6 +12,11 @@ interface SeatProps {
     isCurrentPlayer: boolean;
     isActivePlayer: boolean;
     activeHandIndex: number;
+    payout?: {
+        amount: number;
+        result: 'win' | 'lose' | 'push' | 'blackjack';
+    };
+    showPayout?: boolean;
     onJoin: (name: string) => void;
 }
 
@@ -21,6 +26,8 @@ export function Seat({
     isCurrentPlayer,
     isActivePlayer,
     activeHandIndex,
+    payout,
+    showPayout,
     onJoin,
 }: SeatProps) {
     const [showJoinInput, setShowJoinInput] = useState(false);
@@ -144,6 +151,35 @@ export function Seat({
             animate={{ opacity: 1, scale: 1 }}
             className={`flex flex-col items-center gap-2 ${isActivePlayer ? "z-20" : "z-10"}`}
         >
+            {/* Payout outcome display - above cards */}
+            <AnimatePresence>
+                {showPayout && payout && (
+                    <motion.div
+                        initial={{ opacity: 0, y: 10, scale: 0.8 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: -10, scale: 0.8 }}
+                        className={`mb-2 px-3 py-1.5 rounded-lg font-bold text-sm shadow-lg ${payout.result === 'blackjack'
+                                ? 'bg-gradient-to-r from-amber-400 to-yellow-300 text-black shadow-amber-400/40'
+                                : payout.result === 'win'
+                                    ? 'bg-gradient-to-r from-emerald-500 to-emerald-400 text-white shadow-emerald-500/40'
+                                    : payout.result === 'push'
+                                        ? 'bg-gradient-to-r from-slate-400 to-slate-300 text-black shadow-slate-400/40'
+                                        : 'bg-gradient-to-r from-red-500 to-red-400 text-white shadow-red-500/40'
+                            }`}
+                    >
+                        {payout.result === 'blackjack' && '🎉 BLACKJACK! '}
+                        {payout.result === 'win' && '✓ WIN '}
+                        {payout.result === 'push' && '↔ PUSH '}
+                        {payout.result === 'lose' && '✗ LOSE '}
+                        {payout.amount !== 0 && (
+                            <span className="ml-1">
+                                {payout.amount > 0 ? '+' : ''}{payout.amount > 0 ? `$${payout.amount}` : `-$${Math.abs(payout.amount)}`}
+                            </span>
+                        )}
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
             {/* Cards area */}
             <div className="min-h-[70px] flex flex-col items-center gap-2">
                 {seat.hands.map((hand, handIndex) => {

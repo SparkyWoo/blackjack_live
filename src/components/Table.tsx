@@ -26,6 +26,10 @@ interface TableProps {
         amount: number;
         result: 'win' | 'lose' | 'push' | 'blackjack';
     } | null;
+    seatPayouts: Record<number, {
+        amount: number;
+        result: 'win' | 'lose' | 'push' | 'blackjack';
+    }>;
     lastInsurancePayout: {
         seatIndex: number;
         amount: number;
@@ -69,6 +73,7 @@ export function Table({
     gameState,
     playerId,
     lastPayout,
+    seatPayouts,
     lastInsurancePayout,
     leaderboard,
     leaderboardAdherence,
@@ -458,6 +463,8 @@ export function Table({
                                     isCurrentPlayer={seat.playerId === playerId}
                                     isActivePlayer={index === gameState.activePlayerIndex}
                                     activeHandIndex={gameState.activeHandIndex}
+                                    payout={seatPayouts[index]}
+                                    showPayout={gameState.phase === "payout"}
                                     onJoin={(name) => onJoinSeat(index, name)}
                                 />
                             </div>

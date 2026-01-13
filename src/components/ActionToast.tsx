@@ -8,6 +8,7 @@ interface ActionToastProps {
         playerId: string;
         action: string;
         seatIndex: number;
+        isOptimal?: boolean;
     } | null;
     playerName: string;
     gamePhase?: string;
@@ -17,6 +18,7 @@ interface ActionEntry {
     id: string;
     action: string;
     playerName: string;
+    isOptimal?: boolean;
     timestamp: number;
 }
 
@@ -51,6 +53,7 @@ export function ActionToast({ action, playerName, gamePhase }: ActionToastProps)
                 id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
                 action: action.action,
                 playerName,
+                isOptimal: action.isOptimal,
                 timestamp: Date.now(),
             };
 
@@ -101,6 +104,13 @@ export function ActionToast({ action, playerName, gamePhase }: ActionToastProps)
                                             {config.label}
                                         </span>
                                     </div>
+
+                                    {/* Strategy indicator */}
+                                    {entry.isOptimal !== undefined && (
+                                        <span className="text-sm ml-0.5" title={entry.isOptimal ? "Optimal play" : "Sub-optimal play"}>
+                                            {entry.isOptimal ? "😊" : "😔"}
+                                        </span>
+                                    )}
                                 </m.div>
                             </m.div>
                         );
