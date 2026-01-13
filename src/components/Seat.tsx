@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo, useCallback, memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Seat as SeatType, calculateHandValue } from "@/lib/gameTypes";
 import { CardStack } from "./Card";
@@ -20,7 +20,7 @@ interface SeatProps {
     onJoin: (name: string) => void;
 }
 
-export function Seat({
+function SeatComponent({
     seat,
     seatIndex,
     isCurrentPlayer,
@@ -35,11 +35,37 @@ export function Seat({
 
     const isEmpty = seat.playerId === null;
 
-    // Calculate hand values
-    const handValues = seat.hands.map((hand) => {
-        const { value, isSoft } = calculateHandValue(hand.cards);
-        return { value, isSoft, status: hand.status };
-    });
+    // Memoize hand values calculation - expensive operation
+    const handValues = useMemo(() =>
+        seat.hands.map((hand) => {
+            const { value, isSoft } = calculateHandValue(hand.cards);
+            return { value, isSoft, status: hand.status };
+        }),
+        [seat.hands]
+    );
+
+    // Memoized handlers for join input
+    const handleInputKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === "Enter" && nameInput.trim()) {
+            onJoin(nameInput.trim());
+            setShowJoinInput(false);
+        } else if (e.key === "Escape") {
+            setShowJoinInput(false);
+            setNameInput("");
+        }
+    }, [nameInput, onJoin]);
+
+    const handleJoinClick = useCallback(() => {
+        if (nameInput.trim()) {
+            onJoin(nameInput.trim());
+            setShowJoinInput(false);
+        }
+    }, [nameInput, onJoin]);
+
+    const handleCancelClick = useCallback(() => {
+        setShowJoinInput(false);
+        setNameInput("");
+    }, []);
 
     // Empty seat - show join option
     if (isEmpty) {
@@ -89,15 +115,7 @@ export function Seat({
                                         autoFocus
                                         value={nameInput}
                                         onChange={(e) => setNameInput(e.target.value)}
-                                        onKeyDown={(e) => {
-                                            if (e.key === "Enter" && nameInput.trim()) {
-                                                onJoin(nameInput.trim());
-                                                setShowJoinInput(false);
-                                            } else if (e.key === "Escape") {
-                                                setShowJoinInput(false);
-                                                setNameInput("");
-                                            }
-                                        }}
+                                        onKeyDown={handleInputKeyDown}
                                         placeholder="Your name"
                                         className="w-20 h-8 text-center text-xs bg-black/80 border-2 border-amber-400/60 
                                                    rounded-lg text-white placeholder-white/50 focus:outline-none 
@@ -106,12 +124,7 @@ export function Seat({
                                     />
                                     <div className="flex gap-1">
                                         <button
-                                            onClick={() => {
-                                                if (nameInput.trim()) {
-                                                    onJoin(nameInput.trim());
-                                                    setShowJoinInput(false);
-                                                }
-                                            }}
+                                            onClick={handleJoinClick}
                                             disabled={!nameInput.trim()}
                                             className={`px-2 py-1 text-[10px] font-bold rounded transition-all
                                                 ${nameInput.trim()
@@ -121,10 +134,7 @@ export function Seat({
                                             Join
                                         </button>
                                         <button
-                                            onClick={() => {
-                                                setShowJoinInput(false);
-                                                setNameInput("");
-                                            }}
+                                            onClick={handleCancelClick}
                                             className="px-2 py-1 text-[10px] font-bold rounded bg-gray-700 text-white/70 hover:bg-gray-600 transition-all"
                                         >
                                             ✕
@@ -159,12 +169,12 @@ export function Seat({
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: -10, scale: 0.8 }}
                         className={`mb-2 px-3 py-1.5 rounded-lg font-bold text-sm shadow-lg ${payout.result === 'blackjack'
-                                ? 'bg-gradient-to-r from-amber-400 to-yellow-300 text-black shadow-amber-400/40'
-                                : payout.result === 'win'
-                                    ? 'bg-gradient-to-r from-emerald-500 to-emerald-400 text-white shadow-emerald-500/40'
-                                    : payout.result === 'push'
-                                        ? 'bg-gradient-to-r from-slate-400 to-slate-300 text-black shadow-slate-400/40'
-                                        : 'bg-gradient-to-r from-red-500 to-red-400 text-white shadow-red-500/40'
+                            ? 'bg-gradient-to-r from-amber-400 to-yellow-300 text-black shadow-amber-400/40'
+                            : payout.result === 'win'
+                                ? 'bg-gradient-to-r from-emerald-500 to-emerald-400 text-white shadow-emerald-500/40'
+                                : payout.result === 'push'
+                                    ? 'bg-gradient-to-r from-slate-400 to-slate-300 text-black shadow-slate-400/40'
+                                    : 'bg-gradient-to-r from-red-500 to-red-400 text-white shadow-red-500/40'
                             }`}
                     >
                         {payout.result === 'blackjack' && '🎉 BLACKJACK! '}
@@ -319,3 +329,26 @@ export function Seat({
         </motion.div>
     );
 }
+
+// Memoized Seat - only re-renders when seat-specific props change
+export const Seat = memo(SeatComponent, (prevProps, nextProps) => {
+    return (
+        prevProps.seatIndex === nextProps.seatIndex &&
+        prevProps.isCurrentPlayer === nextProps.isCurrentPlayer &&
+        prevProps.isActivePlayer === nextProps.isActivePlayer &&
+        prevProps.activeHandIndex === nextProps.activeHandIndex &&
+        prevProps.showPayout === nextProps.showPayout &&
+        prevProps.payout?.result === nextProps.payout?.result &&
+        prevProps.payout?.amount === nextProps.payout?.amount &&
+        prevProps.seat.playerId === nextProps.seat.playerId &&
+        prevProps.seat.displayName === nextProps.seat.displayName &&
+        prevProps.seat.chips === nextProps.seat.chips &&
+        prevProps.seat.bet === nextProps.seat.bet &&
+        prevProps.seat.hands.length === nextProps.seat.hands.length &&
+        prevProps.seat.hands.every((hand, i) =>
+            hand.cards.length === nextProps.seat.hands[i]?.cards.length &&
+            hand.status === nextProps.seat.hands[i]?.status &&
+            hand.isDoubled === nextProps.seat.hands[i]?.isDoubled
+        )
+    );
+});
