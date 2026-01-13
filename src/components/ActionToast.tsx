@@ -36,10 +36,10 @@ export function ActionToast({ action, playerName, gamePhase }: ActionToastProps)
     const [actionHistory, setActionHistory] = useState<ActionEntry[]>([]);
     const prevPhaseRef = useRef<string | undefined>(undefined);
 
-    // Clear actions when entering betting or dealing phase (new round)
+    // Clear actions when entering betting, dealing, or waiting phase (new round or left table)
     useEffect(() => {
         if (gamePhase && prevPhaseRef.current !== gamePhase) {
-            if (gamePhase === "betting" || gamePhase === "dealing") {
+            if (gamePhase === "betting" || gamePhase === "dealing" || gamePhase === "waiting") {
                 setActionHistory([]);
             }
             prevPhaseRef.current = gamePhase;
