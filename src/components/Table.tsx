@@ -266,18 +266,18 @@ export function Table({
                             maskComposite: "exclude",
                         }}
                     />
-                </div>
 
-                {/* Table rules text - centered on table - hidden on small screens */}
-                <div className="absolute left-1/2 -translate-x-1/2 top-[38%] text-center pointer-events-none hidden sm:block">
-                    <div className="text-amber-400/40 text-lg font-serif tracking-[0.3em] font-bold">
-                        BLACKJACK PAYS 3 TO 2
-                    </div>
-                    <div className="text-amber-400/30 text-sm font-serif mt-2 tracking-widest">
-                        DEALER STANDS ON ALL 17s
-                    </div>
-                    <div className="text-amber-400/25 text-xs font-serif mt-1 tracking-widest">
-                        INSURANCE PAYS 2 TO 1
+                    {/* Table rules text - positioned INSIDE the table surface */}
+                    <div className="absolute left-1/2 -translate-x-1/2 top-[15%] sm:top-[12%] text-center pointer-events-none z-10">
+                        <div className="text-amber-400/40 text-xs sm:text-sm md:text-lg font-serif tracking-[0.2em] sm:tracking-[0.3em] font-bold">
+                            BLACKJACK PAYS 3 TO 2
+                        </div>
+                        <div className="text-amber-400/30 text-[10px] sm:text-xs md:text-sm font-serif mt-1 sm:mt-2 tracking-wider sm:tracking-widest">
+                            DEALER STANDS ON ALL 17s
+                        </div>
+                        <div className="text-amber-400/25 text-[8px] sm:text-[10px] md:text-xs font-serif mt-0.5 sm:mt-1 tracking-wider sm:tracking-widest hidden sm:block">
+                            INSURANCE PAYS 2 TO 1
+                        </div>
                     </div>
                 </div>
 
