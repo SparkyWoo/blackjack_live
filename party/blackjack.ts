@@ -882,7 +882,7 @@ export default class BlackjackServer implements Party.Server {
 
     reshuffleShoe() {
         this.state.shoe = createShoe(6);
-        this.state.cutCardIndex = Math.floor(this.state.shoe.length * 0.75);
+        this.state.cutCardIndex = Math.floor(this.state.shoe.length * 0.80);
         this.state.needsReshuffle = false;
         this.state.runningCount = 0; // Reset count on reshuffle
     }

@@ -192,7 +192,7 @@ export function createInitialGameState(): GameState {
     return {
         phase: 'waiting',
         shoe,
-        cutCardIndex: Math.floor(shoe.length * 0.75),
+        cutCardIndex: Math.floor(shoe.length * 0.80),
         needsReshuffle: false,
         dealerHand: [],
         seats: Array.from({ length: 6 }, () => createEmptySeat()),
