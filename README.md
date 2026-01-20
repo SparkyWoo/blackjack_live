@@ -144,7 +144,7 @@ Or connect your GitHub repo to Vercel for automatic deployments.
 | **Split** | Same rank or 10-value cards (max 4 hands) |
 | **Surrender** | Late surrender on first two cards |
 | **Insurance** | Offered when dealer shows Ace |
-| **Decks** | 2-deck shoe, reshuffled at 75% penetration |
+| **Decks** | 6-deck shoe, reshuffled at 75% penetration |
 
 ## 🎨 Customization
 

@@ -102,7 +102,7 @@ export function createDeck(): Card[] {
     return deck;
 }
 
-export function createShoe(numDecks: number = 2): Card[] {
+export function createShoe(numDecks: number = 6): Card[] {
     const shoe: Card[] = [];
     for (let i = 0; i < numDecks; i++) {
         shoe.push(...createDeck());
@@ -188,7 +188,7 @@ export function createEmptySeat(): Seat {
 }
 
 export function createInitialGameState(): GameState {
-    const shoe = createShoe(2);
+    const shoe = createShoe(6);
     return {
         phase: 'waiting',
         shoe,

@@ -1,5 +1,5 @@
 // Basic Strategy Tables for Blackjack
-// Based on standard rules: Dealer stands on all 17s, 2-deck shoe, 3:2 blackjack
+// Based on standard rules: Dealer stands on all 17s, 6-deck shoe, 3:2 blackjack
 
 import { Card, Hand, calculateHandValue, Rank } from "./gameTypes";
 
