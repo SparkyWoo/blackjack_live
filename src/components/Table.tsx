@@ -137,30 +137,70 @@ export function Table({
     }, [isMyTurn]);
 
     // Track phase changes for dealer voice lines
+    // Use seatPayouts to determine if sounds should play based on actual outcomes
     const prevPhaseRef = useRef(gameState.phase);
+    const dealerSoundPlayedRef = useRef(false);
+
+    // Reset the dealer sound flag when leaving payout phase
     useEffect(() => {
-        // Play dealer voice lines when entering payout phase
-        if (prevPhaseRef.current === "dealer_turn" && gameState.phase === "payout") {
+        if (gameState.phase !== "payout") {
+            dealerSoundPlayedRef.current = false;
+        }
+    }, [gameState.phase]);
+
+    // Play dealer voice lines based on actual payout results
+    useEffect(() => {
+        // Only trigger when entering payout phase and haven't played yet
+        if (prevPhaseRef.current !== "payout" && gameState.phase === "payout" && !dealerSoundPlayedRef.current) {
             const dealerHand = gameState.dealerHand;
             if (dealerHand.length > 0) {
-                // Calculate dealer hand value
-                const handValue = dealerHand.reduce((sum, card) => {
-                    if (!card.faceUp) return sum;
-                    if (card.rank === 'A') return sum + 11;
-                    if (['K', 'Q', 'J'].includes(card.rank)) return sum + 10;
-                    return sum + parseInt(card.rank);
-                }, 0);
+                // Calculate dealer hand value (all cards should be face up in payout)
+                let handValue = 0;
+                let aces = 0;
+                for (const card of dealerHand) {
+                    if (card.rank === 'A') {
+                        aces++;
+                        handValue += 11;
+                    } else if (['K', 'Q', 'J'].includes(card.rank)) {
+                        handValue += 10;
+                    } else {
+                        handValue += parseInt(card.rank);
+                    }
+                }
+                // Adjust for aces
+                while (handValue > 21 && aces > 0) {
+                    handValue -= 10;
+                    aces--;
+                }
 
-                // Check for dealer blackjack (2 cards, value 21)
-                if (dealerHand.length === 2 && handValue === 21) {
-                    sounds?.play("dealerBlackjack");
-                } else if (handValue > 21) {
-                    sounds?.play("dealerBust");
+                const dealerBusted = handValue > 21;
+                const dealerHasBlackjack = dealerHand.length === 2 && handValue === 21;
+
+                // Check seatPayouts to determine if voice lines should play
+                const payoutValues = Object.values(seatPayouts);
+
+                // Dealer blackjack sound: only if someone lost to dealer blackjack (not push)
+                // This means dealer has BJ and at least one player lost
+                if (dealerHasBlackjack) {
+                    const someoneLosToDealerBJ = payoutValues.some(p => p.result === 'lose');
+                    if (someoneLosToDealerBJ) {
+                        sounds?.play("dealerBlackjack");
+                        dealerSoundPlayedRef.current = true;
+                    }
+                }
+                // Dealer bust sound: only if someone won due to dealer bust
+                // This means dealer busted AND at least one player won (wasn't already busted)
+                else if (dealerBusted) {
+                    const someoneWonFromBust = payoutValues.some(p => p.result === 'win');
+                    if (someoneWonFromBust) {
+                        sounds?.play("dealerBust");
+                        dealerSoundPlayedRef.current = true;
+                    }
                 }
             }
         }
         prevPhaseRef.current = gameState.phase;
-    }, [gameState.phase, gameState.dealerHand]);
+    }, [gameState.phase, gameState.dealerHand, seatPayouts]);
 
     // Keyboard shortcuts for game actions
     useEffect(() => {
